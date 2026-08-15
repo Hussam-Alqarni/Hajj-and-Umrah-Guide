@@ -1,0 +1,6 @@
+# لقطات اختبار الواجهة — تُولَّد عند تشغيل tools/test-ui.js
+tools/screenshots/
+
+# اعتماديات محلّية مؤقّتة
+node_modules/
+*.tgz

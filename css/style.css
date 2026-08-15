@@ -1,0 +1,660 @@
+/* =========================================================
+   مُرشد العمرة — نظام التصميم
+   وضعان: فاتح بهوية الحرم (أبيض وأخضر)، وداكن بهوية الكعبة (أسود وذهبي).
+   كل مكوّن يُكتب مرّة واحدة بالرموز اللونية، فلا تتكرّر أي قاعدة بين الوضعين.
+   ========================================================= */
+
+/* ——— الوضع الفاتح: هوية الحرم ——— */
+:root,
+[data-theme="light"] {
+  --bg:          #f7f5f0;
+  --bg-alt:      #eeece4;
+  --surface:     #ffffff;
+  --surface-2:   #f2f0e9;
+  --primary:     #0f5132;
+  --primary-2:   #157347;
+  --on-primary:  #ffffff;
+  --accent:      #b08d3f;
+  --text:        #17211c;
+  --muted:       #5d6b63;
+  --line:        rgba(15, 81, 50, 0.14);
+  --line-strong: rgba(15, 81, 50, 0.28);
+  --shadow:      0 2px 10px rgba(23, 33, 28, 0.07);
+  --shadow-lg:   0 12px 32px rgba(23, 33, 28, 0.13);
+  --pattern:     rgba(15, 81, 50, 0.045);
+  --danger:      #9a3412;
+  /* خلفية شاشة الإرشاد حين لا تعمل الكاميرا — بهوية الحرم */
+  --guide-backdrop: linear-gradient(180deg, #123528 0%, #0c1f18 100%);
+  color-scheme: light;
+}
+
+/* ——— الوضع الداكن: هوية الكعبة ——— */
+[data-theme="dark"] {
+  --bg:          #0a0a0a;
+  --bg-alt:      #0f0e0c;
+  --surface:     #141210;
+  --surface-2:   #1c1916;
+  --primary:     #d4af37;
+  --primary-2:   #e8c86a;
+  --on-primary:  #0a0a0a;
+  --accent:      #2f6b4f;
+  --text:        #ece6d8;
+  --muted:       #9a9082;
+  --line:        rgba(212, 175, 55, 0.16);
+  --line-strong: rgba(212, 175, 55, 0.34);
+  --shadow:      0 2px 10px rgba(0, 0, 0, 0.5);
+  --shadow-lg:   0 12px 32px rgba(0, 0, 0, 0.65);
+  --pattern:     rgba(212, 175, 55, 0.05);
+  --danger:      #f0a882;
+  /* خلفية شاشة الإرشاد حين لا تعمل الكاميرا — بهوية الكعبة */
+  --guide-backdrop: linear-gradient(180deg, #141210 0%, #0a0a0a 100%);
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:          #0a0a0a;
+    --bg-alt:      #0f0e0c;
+    --surface:     #141210;
+    --surface-2:   #1c1916;
+    --primary:     #d4af37;
+    --primary-2:   #e8c86a;
+    --on-primary:  #0a0a0a;
+    --accent:      #2f6b4f;
+    --text:        #ece6d8;
+    --muted:       #9a9082;
+    --line:        rgba(212, 175, 55, 0.16);
+    --line-strong: rgba(212, 175, 55, 0.34);
+    --shadow:      0 2px 10px rgba(0, 0, 0, 0.5);
+    --shadow-lg:   0 12px 32px rgba(0, 0, 0, 0.65);
+    --pattern:     rgba(212, 175, 55, 0.05);
+    --danger:      #f0a882;
+    color-scheme: dark;
+  }
+}
+
+/* =========================================================
+   الأساسيات
+   ========================================================= */
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  font-family: "Tajawal", system-ui, -apple-system, sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  line-height: 1.75;
+  font-size: 16px;
+  min-height: 100vh;
+}
+
+/* الزخرفة الهندسية الإسلامية — نجمة ثمانية بشفافية خافتة */
+.patterned {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cg fill='none' stroke='%23000' stroke-width='1'%3E%3Cpath d='M30 2 L58 30 L30 58 L2 30 Z'/%3E%3Cpath d='M10 10 L50 10 L50 50 L10 50 Z'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 60px 60px;
+}
+
+h1, h2, h3, h4 {
+  font-family: "Reem Kufi", "Tajawal", sans-serif;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text);
+  margin: 0 0 0.6rem;
+}
+
+h1 { font-size: clamp(1.6rem, 5.5vw, 2.1rem); }
+h2 { font-size: clamp(1.25rem, 4.5vw, 1.5rem); }
+h3 { font-size: 1.1rem; }
+
+p { margin: 0 0 0.85rem; }
+
+a { color: var(--primary); }
+
+/* =========================================================
+   الهيكل العام
+   ========================================================= */
+
+.page {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 0 1rem 4rem;
+}
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(8px);
+}
+
+.site-header .brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: "Reem Kufi", sans-serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.header-tools { display: flex; gap: 0.4rem; }
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 40px;
+  min-width: 40px;
+  padding: 0 0.7rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--primary);
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.icon-btn:hover { background: var(--surface-2); }
+
+/* =========================================================
+   المكوّنات
+   ========================================================= */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1.1rem 1.2rem;
+  margin-bottom: 1rem;
+  box-shadow: var(--shadow);
+}
+
+.eyebrow {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--primary);
+  margin: 0 0 0.35rem;
+}
+
+.rule {
+  width: 3.5rem;
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  margin: 0 0 1rem;
+}
+
+.lead {
+  font-size: 1.02rem;
+  color: var(--muted);
+  line-height: 1.85;
+}
+
+/* وسم الحكم الشرعي: ركن / واجب / سنة */
+.hukm {
+  display: inline-block;
+  padding: 0.12rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 1px solid var(--line-strong);
+  color: var(--primary);
+  background: var(--surface-2);
+  white-space: nowrap;
+}
+
+.hukm[data-hukm="ركن"]  { border-color: var(--primary); }
+.hukm[data-hukm="واجب"] { border-color: var(--accent); color: var(--accent); }
+.hukm[data-hukm="سنة"]  { color: var(--muted); }
+
+/* الآيات والأذكار بخط أميري */
+.dhikr {
+  font-family: "Amiri Quran", "Amiri", "Tajawal", serif;
+  font-size: 1.15rem;
+  line-height: 2.35;
+  color: var(--text);
+  background: var(--surface-2);
+  border-inline-start: 3px solid var(--primary);
+  border-radius: 8px;
+  padding: 0.9rem 1.1rem;
+  margin: 0.7rem 0;
+}
+
+.dhikr .ayah { display: block; }
+
+.dhikr cite {
+  display: block;
+  margin-top: 0.5rem;
+  font-family: "Tajawal", sans-serif;
+  font-size: 0.8rem;
+  font-style: normal;
+  color: var(--muted);
+}
+
+/* التنويه الشرعي */
+.notice {
+  background: var(--surface-2);
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  font-size: 0.9rem;
+  line-height: 1.8;
+  color: var(--text);
+}
+
+.notice strong { color: var(--primary); }
+
+/* الأزرار */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-height: 52px;
+  padding: 0.8rem 1.2rem;
+  font-family: inherit;
+  font-size: 1.02rem;
+  font-weight: 700;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+  text-align: center;
+  transition: transform 0.1s ease, background 0.15s ease;
+}
+
+.btn:active { transform: translateY(1px); }
+
+.btn-primary { background: var(--primary); color: var(--on-primary); }
+.btn-primary:hover { background: var(--primary-2); }
+
+.btn-outline {
+  background: transparent;
+  color: var(--primary);
+  border-color: var(--line-strong);
+}
+.btn-outline:hover { background: var(--surface-2); }
+
+.btn-row { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 1rem; }
+
+/* قائمة خطوات مرقّمة */
+.steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.9rem; }
+
+.steps li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.75rem;
+  height: 1.75rem;
+  font-family: "Reem Kufi", sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--on-primary);
+  background: var(--primary);
+  border-radius: 6px;
+}
+
+/* قائمة نقطية */
+.list { margin: 0.4rem 0 0; padding-inline-start: 1.15rem; }
+.list li { margin-bottom: 0.4rem; }
+
+/* =========================================================
+   شاشة الإرشاد الحيّ (guide.html)
+   الطبقة فوق الكاميرا تبقى داكنة في الوضعين ليُقرأ النص فوق صورة متغيّرة،
+   وما يتبدّل هو لون النبرة فقط.
+   ========================================================= */
+
+.guide-body { overflow: hidden; height: 100vh; height: 100dvh; }
+
+/* حين لا تعمل الكاميرا (وضع العدّاد اليدوي، أو تعذُّر الماركرات) تظهر خلفية
+   الهويّة بدل السواد الفارغ الذي يوهم بعطلٍ في الشاشة. */
+#camera-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  background: var(--guide-backdrop);
+}
+
+#camera-layer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.5;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.05' stroke-width='1'%3E%3Cpath d='M36 4 L68 36 L36 68 L4 36 Z'/%3E%3Cpath d='M14 14 L58 14 L58 58 L14 58 Z'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 72px 72px;
+}
+
+/* عند تشغيل الكاميرا تُخفى الخلفية والزخرفة ليظهر الفيديو صافياً */
+#camera-layer.camera-on { background: #000; }
+#camera-layer.camera-on::after { display: none; }
+
+#camera-layer video { object-fit: cover !important; }
+.mindar-ui-overlay { display: none !important; }
+
+#guide-ui {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 0.75rem;
+  pointer-events: none;
+}
+
+#guide-ui > * { pointer-events: auto; }
+
+/* الرموز الخاصة بالطبقة الداكنة الثابتة */
+#guide-ui, .status-panel, .dua-sheet {
+  --glass:      rgba(10, 10, 10, 0.82);
+  --glass-2:    rgba(255, 255, 255, 0.08);
+  --glass-line: rgba(255, 255, 255, 0.16);
+  --glass-text: #f3efe6;
+  --glass-muted:#a8a094;
+}
+
+.status-panel {
+  background: var(--glass);
+  border: 1px solid var(--glass-line);
+  border-radius: 14px;
+  padding: 0.85rem 1rem;
+  backdrop-filter: blur(12px);
+  color: var(--glass-text);
+  box-shadow: var(--shadow-lg);
+}
+
+.status-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-bottom: 0.5rem;
+}
+
+.stage-name {
+  font-family: "Reem Kufi", sans-serif;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--primary);
+  margin: 0;
+}
+
+.stage-hukm {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--glass-line);
+  color: var(--glass-muted);
+  white-space: nowrap;
+}
+
+.shawt-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-bottom: 0.5rem;
+}
+
+.shawt-label { font-size: 0.95rem; font-weight: 700; color: var(--glass-text); }
+
+/* خرزات الأشواط السبع */
+.beads { display: flex; gap: 0.3rem; }
+
+.bead {
+  width: 0.95rem;
+  height: 0.95rem;
+  border-radius: 50%;
+  border: 1.5px solid var(--glass-line);
+  background: transparent;
+  transition: background 0.25s ease, transform 0.25s ease;
+}
+
+.bead.done { background: var(--primary); border-color: var(--primary); }
+.bead.current { border-color: var(--primary); transform: scale(1.22); }
+
+.task-now {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--glass-text);
+  margin: 0 0 0.55rem;
+}
+
+/* الوجهة والسهم */
+.heading-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid var(--glass-line);
+}
+
+.compass {
+  flex: 0 0 auto;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 50%;
+  border: 1px solid var(--glass-line);
+  background: var(--glass-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.compass svg { width: 1.5rem; height: 1.5rem; color: var(--primary); transition: transform 0.2s ease; }
+
+.dest-label { font-size: 0.78rem; color: var(--glass-muted); margin: 0; }
+.dest-name  { font-size: 0.98rem; font-weight: 700; color: var(--glass-text); margin: 0; }
+
+/* شارة مصدر العدّ ودقّة الإشارة */
+.source-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--glass-muted);
+}
+
+.source-dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--glass-muted); }
+.source-dot.live { background: var(--primary); }
+.source-dot.weak { background: var(--danger); }
+
+/* أدوات أسفل الشاشة */
+.guide-actions { display: flex; flex-direction: column; gap: 0.5rem; }
+
+.counter-row { display: flex; gap: 0.5rem; }
+
+.btn-count {
+  flex: 1;
+  min-height: 56px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  font-family: inherit;
+  color: var(--on-primary);
+  background: var(--primary);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-count:active { transform: scale(0.98); }
+
+.btn-undo {
+  flex: 0 0 auto;
+  min-width: 56px;
+  min-height: 56px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--glass-text);
+  background: var(--glass);
+  border: 1px solid var(--glass-line);
+  border-radius: 12px;
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+}
+
+.btn-ghost {
+  min-height: 44px;
+  padding: 0 1rem;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--glass-text);
+  background: var(--glass);
+  border: 1px solid var(--glass-line);
+  border-radius: 10px;
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+}
+
+/* لوحة الأدعية السفلية */
+.dua-sheet {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 60;
+  max-height: 72vh;
+  overflow-y: auto;
+  background: var(--glass);
+  backdrop-filter: blur(16px);
+  border-top: 1px solid var(--glass-line);
+  border-radius: 16px 16px 0 0;
+  padding: 1rem 1.1rem 1.6rem;
+  color: var(--glass-text);
+  transform: translateY(100%);
+  transition: transform 0.25s ease;
+}
+
+.dua-sheet.open { transform: translateY(0); }
+
+.dua-sheet h3 { color: var(--primary); margin-bottom: 0.75rem; }
+
+.dua-sheet .dhikr {
+  background: var(--glass-2);
+  border-inline-start-color: var(--primary);
+  color: var(--glass-text);
+}
+
+.dua-sheet .dhikr cite { color: var(--glass-muted); }
+
+.sheet-handle {
+  width: 2.5rem;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--glass-line);
+  margin: 0 auto 0.85rem;
+}
+
+/* شاشة تأكيد انتقال المرحلة */
+.overlay-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 1.5rem;
+  background: rgba(8, 8, 8, 0.94);
+  backdrop-filter: blur(10px);
+  color: var(--glass-text);
+}
+
+.overlay-screen.show { display: flex; }
+.overlay-screen h2 { color: var(--primary); }
+.overlay-screen p { color: var(--glass-muted); max-width: 26rem; }
+.overlay-screen .btn-row { max-width: 22rem; width: 100%; }
+
+/* =========================================================
+   دليل المناسك (manasik.html)
+   ========================================================= */
+
+.rite-block { scroll-margin-top: 4rem; }
+
+.rite-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+.rite-head h2 { margin: 0; }
+
+.count-pill {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--on-primary);
+  background: var(--primary);
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+}
+
+.toc { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+.toc a {
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  text-decoration: none;
+  color: var(--primary);
+}
+
+.gender-note {
+  font-size: 0.88rem;
+  border-radius: 8px;
+  padding: 0.6rem 0.85rem;
+  margin: 0.5rem 0;
+  background: var(--surface-2);
+  border: 1px dashed var(--line-strong);
+}
+
+.gender-note b { color: var(--primary); }
+
+/* =========================================================
+   تعديلات الاتجاه للإنجليزية
+   ========================================================= */
+
+[dir="ltr"] body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+[dir="ltr"] h1, [dir="ltr"] h2, [dir="ltr"] h3 { font-family: "Reem Kufi", system-ui, sans-serif; }
+[dir="ltr"] .dhikr { font-family: "Amiri Quran", "Amiri", serif; }
+
+/* احترام تفضيل تقليل الحركة */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="صفة العمرة كما وردت في السنّة، مرتّبةً على مراحلها، مع بيان حكم كل عمل والأذكار الواردة فيه." />
+  <title>دليل العمرة — مُرشد العمرة</title>
+
+  <script src="js/i18n.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Reem+Kufi:wght@400;500;600;700&family=Tajawal:wght@400;500;700&family=Amiri+Quran&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <a class="brand" href="index.html">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+        <rect x="5" y="7" width="14" height="13" rx="1" />
+        <path d="M5 11h14M12 2l7 5H5l7-5z" />
+      </svg>
+      <span data-i18n="brand">مُرشد العمرة</span>
+    </a>
+    <div class="header-tools">
+      <button type="button" class="icon-btn" data-action="toggle-theme" data-i18n-aria="theme_toggle" aria-label="تبديل المظهر">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+          <path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z" />
+        </svg>
+      </button>
+      <button type="button" class="icon-btn" data-action="toggle-lang" data-i18n="lang_toggle">English</button>
+    </div>
+  </header>
+
+  <main class="page">
+
+    <section style="padding-top: 1.5rem;">
+      <h1 data-i18n="manasik_h1">دليل العمرة</h1>
+      <div class="rule" aria-hidden="true"></div>
+      <p class="lead" data-i18n="manasik_lead">
+        صفة العمرة كما وردت في السنّة، مرتّبةً على مراحلها، مع بيان حكم كل عمل:
+        ركنٌ لا تصحّ العمرة بتركه، أو واجبٌ يُجبَر تركه بدم، أو سنّةٌ يُثاب فاعلها
+        ولا يأثم تاركها.
+      </p>
+    </section>
+
+    <section class="card">
+      <h2 data-i18n="manasik_toc">المحتويات</h2>
+      <nav class="toc" id="toc"></nav>
+    </section>
+
+    <section class="notice" style="margin-bottom: 1.25rem;">
+      <strong data-i18n="disclaimer_title">تنويه</strong>
+      <p style="margin: 0.4rem 0 0;" data-i18n="disclaimer_body">
+        هذا الدليل للتذكير والإرشاد وليس فتوى. وإذا شككتَ في عدد الأشواط فالمرجع يقينُك أنت
+        لا الجهاز، والأصل البناء على الأقل. وعند الإشكال فاسأل أهل العلم.
+      </p>
+    </section>
+
+    <div id="rites-full"></div>
+
+    <div class="btn-row">
+      <a class="btn btn-primary" href="guide.html" data-i18n="home_start">ابدأ الإرشاد الحيّ</a>
+      <a class="btn btn-outline" href="sources.html" data-i18n="nav_sources">المصادر</a>
+    </div>
+
+  </main>
+
+  <script src="js/rites.js"></script>
+  <script>
+    /* تُبنى الصفحة كاملةً من نموذج المناسك في js/rites.js،
+       فالنصّ الشرعي محفوظٌ في موضعٍ واحد لا يتكرّر. */
+    document.addEventListener("DOMContentLoaded", function () {
+      var container = document.getElementById("rites-full");
+      var toc = document.getElementById("toc");
+
+      function para(text, cls) {
+        var p = document.createElement("p");
+        if (cls) p.className = cls;
+        p.textContent = text;
+        return p;
+      }
+
+      function bulletList(items) {
+        var ul = document.createElement("ul");
+        ul.className = "list";
+        items.forEach(function (item) {
+          var li = document.createElement("li");
+          li.textContent = item;
+          ul.appendChild(li);
+        });
+        return ul;
+      }
+
+      function genderBlock(items, labelKey) {
+        var box = document.createElement("div");
+        box.className = "gender-note";
+        var b = document.createElement("b");
+        b.textContent = window.t(labelKey) + ": ";
+        box.appendChild(b);
+        box.appendChild(document.createTextNode(items.join(" ")));
+        return box;
+      }
+
+      function duaBlock(dua) {
+        var box = document.createElement("div");
+        box.className = "dhikr";
+
+        var text = document.createElement("span");
+        text.className = "ayah";
+        text.textContent = dua.isAyah ? "﴿" + dua.ar + "﴾" : dua.ar;
+        box.appendChild(text);
+
+        var cite = document.createElement("cite");
+        var parts = [];
+        if (dua.source) parts.push(dua.source[window.currentLang] || dua.source.ar);
+        if (dua.meaning) parts.push(dua.meaning[window.currentLang] || dua.meaning.ar);
+        cite.textContent = parts.join(" — ");
+        box.appendChild(cite);
+
+        return box;
+      }
+
+      window.RITES.forEach(function (rite) {
+        /* فهرس المحتويات */
+        var link = document.createElement("a");
+        link.href = "#rite-" + rite.id;
+        link.textContent = window.t(rite.titleKey);
+        toc.appendChild(link);
+
+        /* بطاقة المرحلة */
+        var card = document.createElement("section");
+        card.className = "card rite-block";
+        card.id = "rite-" + rite.id;
+
+        var head = document.createElement("div");
+        head.className = "rite-head";
+
+        var h2 = document.createElement("h2");
+        h2.textContent = window.t(rite.titleKey);
+        head.appendChild(h2);
+
+        if (rite.hukm) {
+          var hukm = document.createElement("span");
+          hukm.className = "hukm";
+          hukm.setAttribute("data-hukm", rite.hukm);
+          hukm.textContent = window.riteHukm(rite);
+          head.appendChild(hukm);
+        }
+
+        if (rite.count > 1) {
+          var pill = document.createElement("span");
+          pill.className = "count-pill";
+          pill.textContent = rite.count + " " + window.t("shawts");
+          head.appendChild(pill);
+        }
+
+        card.appendChild(head);
+        card.appendChild(para(window.t(rite.taskKey), "lead"));
+
+        var notes = window.riteText(rite.notes);
+        if (notes.length) {
+          var nTitle = document.createElement("h3");
+          nTitle.textContent = window.t("notes_title");
+          card.appendChild(nTitle);
+          card.appendChild(bulletList(notes));
+        }
+
+        var men = window.riteText(rite.menOnly);
+        if (men.length) card.appendChild(genderBlock(men, "men_note"));
+
+        var women = window.riteText(rite.womenOnly);
+        if (women.length) card.appendChild(genderBlock(women, "women_note"));
+
+        if (rite.duas && rite.duas.length) {
+          var dTitle = document.createElement("h3");
+          dTitle.textContent = window.t("duas_title");
+          card.appendChild(dTitle);
+          rite.duas.forEach(function (dua) { card.appendChild(duaBlock(dua)); });
+        }
+
+        container.appendChild(card);
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>الإرشاد الحيّ — مُرشد العمرة</title>
+
+  <script src="js/i18n.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Reem+Kufi:wght@400;500;600;700&family=Tajawal:wght@400;500;700&family=Amiri+Quran&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+
+  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
+</head>
+<body class="guide-body">
+
+  <!-- طبقة الكاميرا: يُحقن فيها مشهد MindAR عند تفعيل التتبّع البصري -->
+  <div id="camera-layer"></div>
+
+  <!-- ——— شاشة البدء ——— -->
+  <div id="screen-start" class="overlay-screen show">
+    <h2 data-i18n="guide_permission_title">قبل البدء</h2>
+    <p data-i18n="guide_permission_body">
+      يحتاج الدليل إذنك باستعمال الكاميرا وتحديد الموقع والبوصلة ليتتبّع أشواطك تلقائياً.
+      ويمكنك رفض ذلك والاعتماد على العدّاد اليدوي، فالدليل يعمل كاملاً بدونها.
+    </p>
+
+    <div class="btn-row">
+      <div style="display:flex; gap:0.5rem;">
+        <button type="button" class="btn btn-outline" data-gender="male" id="btn-male">رجل</button>
+        <button type="button" class="btn btn-outline" data-gender="female" id="btn-female">امرأة</button>
+      </div>
+      <button type="button" class="btn btn-primary" id="btn-start-auto" data-i18n="guide_start_full">ابدأ بالتتبّع التلقائي</button>
+      <button type="button" class="btn btn-outline" id="btn-start-manual" data-i18n="guide_start_manual">ابدأ بالعدّاد اليدوي فقط</button>
+      <a class="btn btn-outline" href="index.html" data-i18n="nav_home">الرئيسية</a>
+    </div>
+  </div>
+
+  <!-- ——— شاشة استئناف تقدّم محفوظ ——— -->
+  <div id="screen-resume" class="overlay-screen">
+    <h2 data-i18n="guide_resume_title">لديك عمرة لم تكتمل</h2>
+    <p data-i18n="guide_resume_body">وجدنا تقدّماً محفوظاً في جهازك. أتريد استئنافه أم البدء من جديد؟</p>
+    <div class="btn-row">
+      <button type="button" class="btn btn-primary" id="btn-resume" data-i18n="guide_resume">استئناف من حيث توقّفت</button>
+      <button type="button" class="btn btn-outline" id="btn-fresh" data-i18n="guide_restart">بدء عمرة جديدة</button>
+    </div>
+  </div>
+
+  <!-- ——— واجهة الإرشاد ——— -->
+  <div id="guide-ui" style="display:none;">
+
+    <div class="status-panel">
+      <div class="status-top">
+        <h1 class="stage-name" id="stage-name">الإحرام</h1>
+        <span class="stage-hukm" id="stage-hukm">ركن</span>
+      </div>
+
+      <div class="shawt-line" id="shawt-line">
+        <span class="shawt-label" id="shawt-label">الشوط ١ من ٧</span>
+        <div class="beads" id="beads" role="img" aria-label="عدّاد الأشواط"></div>
+      </div>
+
+      <p class="task-now" id="task-now"></p>
+
+      <div class="heading-row" id="heading-row">
+        <div class="compass">
+          <svg id="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 20V4M12 4l-6 6M12 4l6 6" />
+          </svg>
+        </div>
+        <div>
+          <p class="dest-label" data-i18n="guide_destination">توجَّه إلى</p>
+          <p class="dest-name" id="dest-name">—</p>
+        </div>
+      </div>
+
+      <div class="source-badge">
+        <span class="source-dot" id="source-dot"></span>
+        <span id="source-text">—</span>
+      </div>
+    </div>
+
+    <div class="guide-actions">
+      <p class="task-now" id="tracking-warning" style="display:none; background:rgba(0,0,0,0.72); border-radius:10px; padding:0.5rem 0.75rem; margin:0;"></p>
+
+      <div style="display:flex; gap:0.5rem; justify-content:space-between;">
+        <button type="button" class="btn-ghost" id="btn-duas" data-i18n="guide_duas_btn">الأذكار المستحبّة</button>
+        <a class="btn-ghost" href="index.html" style="display:inline-flex; align-items:center; text-decoration:none;" data-i18n="guide_exit">إنهاء</a>
+      </div>
+
+      <div class="counter-row" id="counter-row">
+        <button type="button" class="btn-count" id="btn-count" data-i18n="guide_count_btn">سجِّل شوطاً</button>
+        <button type="button" class="btn-undo" id="btn-undo" data-i18n="guide_undo_btn">تراجع</button>
+      </div>
+
+      <button type="button" class="btn-count" id="btn-stage-done" style="display:none;" data-i18n="guide_next_stage">أنهيتُ هذه المرحلة</button>
+    </div>
+  </div>
+
+  <!-- ——— لوحة الأذكار ——— -->
+  <div class="dua-sheet" id="dua-sheet">
+    <div class="sheet-handle" aria-hidden="true"></div>
+    <h3 id="dua-title" data-i18n="duas_title">ما يُقال</h3>
+    <div id="dua-body"></div>
+    <button type="button" class="btn btn-outline" id="btn-dua-close" style="margin-top:0.5rem;">إغلاق</button>
+  </div>
+
+  <!-- ——— تأكيد اكتمال المرحلة ——— -->
+  <div id="screen-stage" class="overlay-screen">
+    <h2 data-i18n="stage_done_title">تمّت المرحلة</h2>
+    <p id="stage-done-body"></p>
+    <div class="btn-row">
+      <button type="button" class="btn btn-primary" id="btn-stage-continue" data-i18n="stage_continue">متابعة</button>
+      <button type="button" class="btn btn-outline" id="btn-stage-undo" data-i18n="guide_undo_btn">تراجع</button>
+    </div>
+  </div>
+
+  <!-- ——— اكتمال العمرة ——— -->
+  <div id="screen-done" class="overlay-screen">
+    <h2 data-i18n="umrah_done_title">تقبّل الله منك</h2>
+    <p data-i18n="umrah_done_body">تمّت عمرتك بالحلق أو التقصير، وحللتَ من إحرامك.</p>
+    <div class="btn-row">
+      <button type="button" class="btn btn-primary" id="btn-again" data-i18n="umrah_done_again">بدء عمرة جديدة</button>
+      <a class="btn btn-outline" href="index.html" data-i18n="nav_home">الرئيسية</a>
+    </div>
+  </div>
+
+  <script src="js/rites.js"></script>
+  <script src="js/geo.js"></script>
+  <script src="js/tracker.js"></script>
+  <script src="js/guide.js"></script>
+</body>
+</html>
