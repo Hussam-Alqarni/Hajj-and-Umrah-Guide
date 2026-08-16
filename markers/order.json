@@ -1,0 +1,9 @@
+{
+  "note": "ترتيب الماركرات في ملف targets.mind يجب أن يطابق هذا الترتيب تماماً",
+  "order": [
+    "hajar",
+    "maqam",
+    "safa",
+    "marwah"
+  ]
+}

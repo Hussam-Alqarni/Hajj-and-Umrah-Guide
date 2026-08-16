@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="دليلٌ يرافق المعتمر داخل المسجد الحرام فيبيّن له موضعه ورقم شوطه ومهمّته التالية ووجهته، وفق صفة العمرة الثابتة في السنّة." />
+  <title>مُرشد العمرة — دليل مصوَّر بالواقع المعزّز</title>
+
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#0f5132" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)" />
+  <link rel="icon" href="icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+
+  <script src="js/i18n.js"></script>
+  <link rel="stylesheet" href="css/fonts.css" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <a class="brand" href="index.html">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+        <rect x="5" y="7" width="14" height="13" rx="1" />
+        <path d="M5 11h14M12 2l7 5H5l7-5z" />
+      </svg>
+      <span data-i18n="brand">مُرشد العمرة</span>
+    </a>
+    <div class="header-tools">
+      <button type="button" class="icon-btn" data-action="toggle-theme" data-i18n-aria="theme_toggle" aria-label="تبديل المظهر">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+          <path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z" />
+        </svg>
+      </button>
+      <button type="button" class="icon-btn" data-action="toggle-lang" data-i18n="lang_toggle">English</button>
+    </div>
+  </header>
+
+  <main class="page">
+
+    <section style="padding-top: 1.5rem;">
+      <p class="eyebrow" data-i18n="home_eyebrow">دليل العمرة · المسجد الحرام</p>
+      <h1 data-i18n="home_h1">مُرشدك في العمرة، خطوةً بخطوة</h1>
+      <div class="rule" aria-hidden="true"></div>
+      <p class="lead" data-i18n="home_lead">
+        دليلٌ يرافقك داخل المسجد الحرام فيبيّن لك أين أنت الآن، وفي أي شوطٍ أنت،
+        وما المهمّة التالية، وإلى أين تتوجّه؛ مبنيٌّ على صفة العمرة الثابتة في السنّة.
+      </p>
+    </section>
+
+    <section class="card">
+      <h2 data-i18n="home_how_title">كيف يعمل الدليل؟</h2>
+      <ol class="steps">
+        <li><span class="step-num">١</span><span data-i18n="home_how_1">يُحدّد موضعك داخل الحرم بثلاث وسائل مجتمعة: مسح الماركرات بالكاميرا، وتحديد الموقع، والعدّاد اليدوي.</span></li>
+        <li><span class="step-num">٢</span><span data-i18n="home_how_2">يعرض لك في كل لحظة مرحلتك الحالية ورقم الشوط والمهمّة التالية مع سهمٍ يشير إلى وجهتك.</span></li>
+        <li><span class="step-num">٣</span><span data-i18n="home_how_3">يحفظ تقدّمك في جهازك، فإن أُقفل الهاتف أو أُعيد تحميل الصفحة استأنفتَ من حيث توقّفت.</span></li>
+      </ol>
+    </section>
+
+    <section class="card">
+      <h2 data-i18n="home_rites_title">مراحل العمرة</h2>
+      <ol class="steps" id="rites-summary"></ol>
+    </section>
+
+    <section class="card">
+      <h2 data-i18n="home_before_title">قبل أن تُحرِم</h2>
+      <ul class="list">
+        <li data-i18n="home_before_1">اغتسل وتطيَّب في بدنك دون ثوب الإحرام.</li>
+        <li data-i18n="home_before_2">البس ثياب الإحرام قبل بلوغ الميقات.</li>
+        <li data-i18n="home_before_3">انوِ الدخول في النُّسك عند محاذاة الميقات، ثم لبِّ.</li>
+      </ul>
+    </section>
+
+    <section class="notice">
+      <strong data-i18n="disclaimer_title">تنويه</strong>
+      <p style="margin: 0.4rem 0 0;">
+        <span data-i18n="disclaimer_body">هذا دليلُ تذكيرٍ وإرشاد، أُنشئ محتواه استناداً إلى كتب أهل السنّة المعتبرة في المناسك، ويمكنك الاطّلاع على</span>
+        <a href="sources.html" class="link-underline" data-i18n="disclaimer_link">المصادر التي بُني عليها</a>
+        <span data-i18n="disclaimer_tail">· وليس هذا الدليل فتوى؛ وإذا شككتَ في عدد الأشواط فالمرجع يقينُك أنت لا الجهاز، والأصل البناء على الأقل. وعند الإشكال فاسأل أهل العلم.</span>
+      </p>
+    </section>
+
+    <div class="btn-row">
+      <a class="btn btn-primary" href="guide.html" data-i18n="home_start">ابدأ الإرشاد الحيّ</a>
+      <a class="btn btn-outline" href="manasik.html" data-i18n="home_read">قراءة دليل المناسك أولاً</a>
+      <a class="btn btn-outline" href="sources.html" data-i18n="nav_sources">المصادر</a>
+    </div>
+
+  </main>
+
+  <script src="js/rites.js"></script>
+  <script>
+    // ملخّص المراحل مبنيٌّ من نموذج المناسك نفسه، فلا يتكرّر النصّ في موضعين
+    document.addEventListener("DOMContentLoaded", function () {
+      var list = document.getElementById("rites-summary");
+      var digits = ["١", "٢", "٣", "٤", "٥", "٦", "٧"];
+
+      window.RITES.filter(function (r) { return r.id !== "done"; }).forEach(function (rite, i) {
+        var li = document.createElement("li");
+
+        var num = document.createElement("span");
+        num.className = "step-num";
+        num.textContent = window.currentLang === "ar" ? digits[i] : String(i + 1);
+
+        var body = document.createElement("span");
+
+        var title = document.createElement("strong");
+        title.textContent = window.t(rite.titleKey);
+        body.appendChild(title);
+
+        if (rite.count > 1) {
+          var pill = document.createElement("span");
+          pill.className = "hukm";
+          pill.style.marginInlineStart = "0.5rem";
+          pill.textContent = rite.count + " " + window.t("shawts");
+          body.appendChild(pill);
+        }
+
+        var hukm = document.createElement("span");
+        hukm.className = "hukm";
+        hukm.setAttribute("data-hukm", rite.hukm || "");
+        hukm.style.marginInlineStart = "0.4rem";
+        hukm.textContent = window.riteHukm(rite);
+        body.appendChild(hukm);
+
+        li.appendChild(num);
+        li.appendChild(body);
+        list.appendChild(li);
+      });
+    });
+  </script>
+</body>
+</html>

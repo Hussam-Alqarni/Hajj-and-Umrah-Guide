@@ -1,0 +1,22 @@
+{
+  "name": "مُرشد العمرة",
+  "short_name": "مُرشد العمرة",
+  "description": "دليلٌ يرافق المعتمر داخل المسجد الحرام فيبيّن له موضعه ورقم شوطه ومهمّته التالية ووجهته.",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f7f5f0",
+  "theme_color": "#0f5132",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "الإرشاد الحيّ", "url": "./guide.html" },
+    { "name": "دليل المناسك", "url": "./manasik.html" }
+  ]
+}
