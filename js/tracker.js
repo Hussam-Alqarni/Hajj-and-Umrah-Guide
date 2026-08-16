@@ -26,13 +26,30 @@ window.Tracker = (function () {
   /* حالة داخلية لا تُحفظ ولا تُعرَض */
   var gps = {
     watchId: null,
-    lastBearing: null,   // آخر سمتٍ من الكعبة إلى المستخدم
-    accum: 0,            // مجموع الزوايا المقطوعة في الشوط الجاري
-    lastEnd: "safa",     // آخر طرفٍ بلغه الساعي
-    lastFixAt: 0
+    lastBearing: null,    // آخر سمتٍ من الكعبة إلى المستخدم
+    accum: 0,             // مجموع الزوايا المقطوعة في الشوط الجاري
+    lastEnd: "safa",      // آخر طرفٍ بلغه الساعي
+    lastFixAt: 0,         // وقت آخر عيّنة موقعٍ مقبولة
+    tawafAnchored: false  // هل ثُبِّتت نقطة بداية الطواف بمسح ماركر الحجر؟
   };
 
+  /** هل إشارة الموقع حديثةٌ بما يكفي للاعتماد عليها في التحقّق؟ */
+  function isFixFresh() {
+    return gps.lastFixAt > 0 && Date.now() - gps.lastFixAt < window.CONFIG.FIX_FRESH_MS;
+  }
+
   var markerCooldown = {}; // معرّف الماركر ← آخر وقت احتُسب فيه
+
+  /**
+   * الطرف الذي يقف عنده الساعي بعد عددٍ معلومٍ من الأشواط.
+   * الشوط الأول ينتهي بالمروة، والثاني بالصفا، وهكذا؛ فالأشواط الفردية
+   * تنتهي بالمروة والزوجية بالصفا، والبداية (صفر) عند الصفا.
+   * اشتقاق الطرف من العدّ بدل حفظه مستقلاً يمنع تعارض الاثنين بعد التراجع
+   * أو بعد استئناف تقدّمٍ محفوظ.
+   */
+  function saiEndFor(count) {
+    return count % 2 === 1 ? "marwah" : "safa";
+  }
 
   /* ——— الأحداث ——— */
   function on(evt, fn) {
@@ -142,6 +159,10 @@ window.Tracker = (function () {
     state.awaitingConfirm = false;
     state.source = "manual";
     gps.accum = 0;
+    gps.lastBearing = null;
+    // بعد التراجع يعود الساعي إلى الطرف الموافق للعدّ الجديد، وإلا احتُسب
+    // الشوط التالي مرّتين: مرّةً عند مغادرة الطرف ومرّةً عند بلوغ مقابله.
+    gps.lastEnd = saiEndFor(state.counts.sai);
     changed();
     return true;
   }
@@ -155,7 +176,8 @@ window.Tracker = (function () {
     state.awaitingConfirm = false;
     gps.accum = 0;
     gps.lastBearing = null;
-    gps.lastEnd = "safa";
+    gps.lastEnd = saiEndFor(state.counts.sai);
+    gps.tawafAnchored = false;
     markerCooldown = {};
     changed();
   }
@@ -295,20 +317,34 @@ window.Tracker = (function () {
     if (!rite) return false;
 
     if (rite.tracking === "tawaf" && anchorId === "hajar") {
+      /* الموضع الطبيعي لمسح ماركر الحجر هو بداية الطواف، فأول مسحةٍ تُثبّت
+         نقطة الانطلاق ولا تُحتسب شوطاً؛ وإلا زاد العدّ شوطاً كاملاً. */
+      if (!gps.tawafAnchored) {
+        gps.tawafAnchored = true;
+        gps.accum = 0;
+        gps.lastBearing = null;
+        emit("anchorstart", { anchorId: anchorId, rite: rite });
+        return false;
+      }
+
+      /* ومع إشارة موقعٍ حديثة نتحقّق أنه أتمّ دورةً فعلاً: فمن وقف عند الحجر
+         ثم مسح الماركر دون أن يطوف لا يُحتسب له شوط. فإن انقطعت الإشارة
+         اعتُمد المسح وحده، إذ لا سبيل حينئذٍ إلى التحقّق. */
+      if (isFixFresh() && Math.abs(gps.accum) < 180) return false;
+
       gps.accum = 0;
       gps.lastBearing = null;
       return addCircuit("marker");
     }
 
     if (rite.tracking === "sai") {
-      if (anchorId === "marwah" && gps.lastEnd === "safa") {
-        gps.lastEnd = "marwah";
+      /* الشوط ببلوغ طرفٍ مخالفٍ للطرف الذي انتهى عنده الشوط السابق،
+         فالوقوف الطويل عند طرفٍ واحدٍ ومسحُه مراراً لا يزيد العدّ. */
+      if (anchorId !== gps.lastEnd && (anchorId === "safa" || anchorId === "marwah")) {
+        gps.lastEnd = anchorId;
         return addCircuit("marker");
       }
-      if (anchorId === "safa" && gps.lastEnd === "marwah") {
-        gps.lastEnd = "safa";
-        return addCircuit("marker");
-      }
+      return false;
     }
 
     // ماركرٌ لا يخصّ المرحلة الجارية: يُبلَّغ به ولا يُغيَّر شيء قسراً
@@ -336,6 +372,8 @@ window.Tracker = (function () {
         state.counts = { tawaf: saved.counts.tawaf || 0, sai: saved.counts.sai || 0 };
         state.gender = saved.gender || "male";
         state.startedAt = saved.startedAt;
+        // استئناف سعيٍ في منتصفه يجب أن يعرف الطرف الذي وقف عنده صاحبه
+        gps.lastEnd = saiEndFor(state.counts.sai);
       }
     } else {
       reset();
@@ -352,7 +390,9 @@ window.Tracker = (function () {
     state.startedAt = Date.now();
     gps.accum = 0;
     gps.lastBearing = null;
+    gps.lastFixAt = 0;
     gps.lastEnd = "safa";
+    gps.tawafAnchored = false;
     markerCooldown = {};
     clearSaved();
     changed();

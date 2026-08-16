@@ -19,6 +19,7 @@
     shawtLabel:   el("shawt-label"),
     beads:        el("beads"),
     taskNow:      el("task-now"),
+    stageHint:    el("stage-hint"),
     headingRow:   el("heading-row"),
     arrow:        el("arrow"),
     destName:     el("dest-name"),
@@ -29,12 +30,16 @@
     btnStageDone: el("btn-stage-done"),
     duaSheet:     el("dua-sheet"),
     duaBody:      el("dua-body"),
-    stageDoneBody:el("stage-done-body")
+    stageDoneBody:el("stage-done-body"),
+    btnCount:     el("btn-count"),
+    live:         el("live-region")
   };
 
   var heading = null;      // اتجاه الجهاز بالدرجات، أو null إن لم تتوفّر البوصلة
   var lastPos = null;      // آخر موضعٍ معلوم للمستخدم
   var visualTracking = false;
+  var sessionStarted = false;
+  var lastCount = null;    // لتمييز الشوط الجديد عن مجرّد إعادة رسم
 
   /* ——— أدوات العرض ——— */
 
@@ -59,6 +64,7 @@
     ui.stageHukm.textContent = window.riteHukm(rite);
     ui.stageHukm.style.display = rite.hukm ? "" : "none";
     ui.taskNow.textContent = window.t(rite.taskKey);
+    renderHint(state);
 
     // الأشواط: تظهر في مراحل العدّ فقط
     if (rite.tracking) {
@@ -70,6 +76,11 @@
       ui.shawtLabel.textContent =
         window.t("guide_shawt") + " " + num(current) + " " + window.t("guide_of") + " " + num(state.total);
       renderBeads(state.count, state.total);
+
+      /* بعد اكتمال العدد ينتظر الدليل تأكيد المستخدم، فيُعطَّل زرّ التسجيل
+         بدل أن يبقى ظاهراً لا يستجيب دون تفسير. */
+      ui.btnCount.disabled = state.awaitingConfirm || state.count >= state.total;
+      ui.btnCount.style.opacity = ui.btnCount.disabled ? "0.45" : "";
     } else {
       ui.shawtLine.style.display = "none";
       ui.counterRow.style.display = "none";
@@ -90,6 +101,29 @@
     if (rite.id === "done") show(ui.screenDone);
   }
 
+  /**
+   * تنبيه المرحلة الجارية. وهو يتغيّر بتغيّر الشوط لا بتغيّر المرحلة وحدها،
+   * لأن الرمَل مشروعٌ في الأشواط الثلاثة الأُولى دون الأربعة الباقية —
+   * وهذا ممّا يُغفَل، ولا يتبيّن للمعتمر إلا إذا عُرِض عليه في وقته.
+   */
+  function renderHint(state) {
+    var key = null;
+    var female = state.gender === "female";
+
+    if (state.rite.id === "tawaf") {
+      key = female ? "hint_tawaf_women" : (state.count < 3 ? "hint_raml" : "hint_walk");
+    } else if (state.rite.id === "sai") {
+      key = female ? "hint_sai_walk" : "hint_sai_run";
+    }
+
+    if (key) {
+      ui.stageHint.textContent = window.t(key);
+      ui.stageHint.style.display = "";
+    } else {
+      ui.stageHint.style.display = "none";
+    }
+  }
+
   function renderBeads(done, total) {
     if (ui.beads.childElementCount !== total) {
       ui.beads.innerHTML = "";
@@ -104,15 +138,21 @@
     });
   }
 
+  function sourceLabel(state) {
+    if (state.source === "gps") return window.t("src_gps");
+    if (state.source === "marker") return window.t("src_marker");
+    return window.t("src_manual");
+  }
+
+  /** إعلانٌ لقارئ الشاشة دون تغييرٍ بصريّ. */
+  function announce(message) {
+    ui.live.textContent = message;
+  }
+
   function renderSource(state) {
     /* مصدر آخر شوطٍ يُعرَض كما هو دائماً، فلا يقع عدٌّ خفيٌّ لا يعلمه المعتمر،
        وحالةُ التتبّع تُعرَض مستقلّةً عنه في التنبيه أسفل الشاشة. */
-    var label;
-    if (state.source === "gps") label = window.t("src_gps");
-    else if (state.source === "marker") label = window.t("src_marker");
-    else label = window.t("src_manual");
-
-    var text = window.t("counted_by") + ": " + label;
+    var text = window.t("counted_by") + ": " + sourceLabel(state);
 
     if (state.accuracy !== null) {
       text += " · " + window.t("accuracy") + " " + num(Math.round(state.accuracy)) + window.t("meters");
@@ -145,36 +185,77 @@
     ui.arrow.style.transform = "rotate(" + (b - heading) + "deg)";
   }
 
-  /* ——— لوحة الأذكار ——— */
+  /* ——— لوحة الأذكار والتنبيهات ——— */
 
-  function renderDuas(rite) {
+  /**
+   * لوحةٌ واحدة تجمع ما يحتاجه المعتمر في المرحلة الجارية: التنبيهات الفقهية،
+   * ثم ما يخصّه بحسب كونه رجلاً أو امرأة، ثم الأذكار الواردة.
+   * وإنما جُمعت هنا لأن هذه أحوج المواضع إليها — لا في صفحةٍ تُقرأ قبل الدخول.
+   */
+  function renderSheet(rite, gender) {
     ui.duaBody.innerHTML = "";
 
-    if (!rite.duas || rite.duas.length === 0) {
-      var empty = document.createElement("p");
-      empty.textContent = "—";
-      ui.duaBody.appendChild(empty);
-      return;
+    var notes = window.riteText(rite.notes);
+    if (notes.length) ui.duaBody.appendChild(section(window.t("notes_title"), listOf(notes)));
+
+    var own = gender === "female" ? window.riteText(rite.womenOnly) : window.riteText(rite.menOnly);
+    if (own.length) {
+      var label = gender === "female" ? window.t("women_note") : window.t("men_note");
+      ui.duaBody.appendChild(section(label, listOf(own), true));
     }
 
-    rite.duas.forEach(function (dua) {
-      var box = document.createElement("div");
-      box.className = "dhikr";
+    if (rite.duas && rite.duas.length) {
+      var wrap = document.createElement("div");
+      rite.duas.forEach(function (dua) { wrap.appendChild(duaBox(dua)); });
+      ui.duaBody.appendChild(section(window.t("duas_title"), wrap));
+    }
 
-      var text = document.createElement("span");
-      text.className = "ayah";
-      text.textContent = dua.isAyah ? "﴿" + dua.ar + "﴾" : dua.ar;
-      box.appendChild(text);
+    if (!ui.duaBody.childElementCount) {
+      ui.duaBody.appendChild(document.createTextNode("—"));
+    }
+  }
 
-      var cite = document.createElement("cite");
-      var parts = [];
-      if (dua.source) parts.push(dua.source[window.currentLang] || dua.source.ar);
-      if (dua.meaning) parts.push(dua.meaning[window.currentLang] || dua.meaning.ar);
-      cite.textContent = parts.join(" — ");
-      box.appendChild(cite);
+  function section(title, body, highlight) {
+    var box = document.createElement("section");
+    if (highlight) box.className = "sheet-gender";
 
-      ui.duaBody.appendChild(box);
+    var h = document.createElement("h4");
+    h.className = "sheet-heading";
+    h.textContent = title;
+
+    box.appendChild(h);
+    box.appendChild(body);
+    return box;
+  }
+
+  function listOf(items) {
+    var ul = document.createElement("ul");
+    ul.className = "list";
+    items.forEach(function (item) {
+      var li = document.createElement("li");
+      li.textContent = item;
+      ul.appendChild(li);
     });
+    return ul;
+  }
+
+  function duaBox(dua) {
+    var box = document.createElement("div");
+    box.className = "dhikr";
+
+    var text = document.createElement("span");
+    text.className = "ayah";
+    text.textContent = dua.isAyah ? "﴿" + dua.ar + "﴾" : dua.ar;
+    box.appendChild(text);
+
+    var cite = document.createElement("cite");
+    var parts = [];
+    if (dua.source) parts.push(dua.source[window.currentLang] || dua.source.ar);
+    if (dua.meaning) parts.push(dua.meaning[window.currentLang] || dua.meaning.ar);
+    cite.textContent = parts.join(" — ");
+    box.appendChild(cite);
+
+    return box;
   }
 
   /* ——— البوصلة ——— */
@@ -187,7 +268,19 @@
     } else {
       return;
     }
+
+    /* تعويض دوران الشاشة: من أمال هاتفه عرضياً انحرف سهمه بقدر زاوية
+       الدوران إن لم تُطرح، فيدلّه على غير وجهته. */
+    heading = (heading + screenAngle() + 360) % 360;
+
     updateArrow(window.Tracker.getState());
+  }
+
+  function screenAngle() {
+    if (window.screen && window.screen.orientation && typeof window.screen.orientation.angle === "number") {
+      return window.screen.orientation.angle;
+    }
+    return typeof window.orientation === "number" ? window.orientation : 0;
   }
 
   function startCompass() {
@@ -206,6 +299,36 @@
   function bindOrientation() {
     window.addEventListener("deviceorientationabsolute", onOrientation, true);
     window.addEventListener("deviceorientation", onOrientation, true);
+  }
+
+  /* ——— منع إطفاء الشاشة ——— */
+
+  var wakeLock = null;
+
+  /**
+   * الطواف والسعي يستغرقان قرابة الساعة، والهاتف يُقفل من تلقائه مراراً
+   * خلالها. ويُفقد قفل الشاشة عند الانتقال إلى تطبيقٍ آخر أو إخفاء الصفحة،
+   * فيُعاد طلبه عند العودة.
+   */
+  function requestWakeLock() {
+    if (!navigator.wakeLock) return;
+    navigator.wakeLock.request("screen").then(function (lock) {
+      wakeLock = lock;
+      lock.addEventListener("release", function () { wakeLock = null; });
+    }).catch(function () { /* رُفض الطلب أو البطارية منخفضة — لا يُعطَّل شيء */ });
+  }
+
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible" && wakeLock === null && sessionStarted) {
+      requestWakeLock();
+    }
+  });
+
+  /* ——— تأكيدٌ لمسيّ ——— */
+
+  /** اهتزازة قصيرة عند تسجيل شوط، فالشاشة قد لا تُرى في الزحام. */
+  function buzz(pattern) {
+    if (navigator.vibrate) navigator.vibrate(pattern);
   }
 
   /* ——— التتبّع البصري بالماركرات ——— */
@@ -257,7 +380,17 @@
 
   /* ——— الأحداث ——— */
 
-  window.Tracker.on("change", render);
+  window.Tracker.on("change", function (state) {
+    render(state);
+
+    /* الاهتزاز والإعلان الصوتي عند زيادة العدّ فقط، لا عند كل إعادة رسم */
+    var key = state.stage + ":" + state.count;
+    if (lastCount !== null && key !== lastCount && state.count > 0 && state.rite.tracking) {
+      buzz(60);
+      announce(ui.shawtLabel.textContent + " — " + window.t("counted_by") + " " + sourceLabel(state));
+    }
+    lastCount = key;
+  });
 
   window.Tracker.on("position", function (data) {
     lastPos = data.here;
@@ -289,8 +422,10 @@
   function beginSession(auto) {
     hide(ui.screenStart);
     ui.guide.style.display = "flex";
+    sessionStarted = true;
 
     window.Tracker.setGender(gender);
+    requestWakeLock();
 
     if (auto) {
       window.Tracker.startGeolocation();
@@ -323,8 +458,16 @@
   });
 
   el("btn-duas").addEventListener("click", function () {
-    renderDuas(window.Tracker.getState().rite);
+    var state = window.Tracker.getState();
+    renderSheet(state.rite, state.gender);
     ui.duaSheet.classList.add("open");
+  });
+
+  /* إغلاق اللوحة بالنقر خارجها */
+  document.addEventListener("click", function (e) {
+    if (!ui.duaSheet.classList.contains("open")) return;
+    if (ui.duaSheet.contains(e.target) || el("btn-duas").contains(e.target)) return;
+    ui.duaSheet.classList.remove("open");
   });
 
   el("btn-dua-close").addEventListener("click", function () {

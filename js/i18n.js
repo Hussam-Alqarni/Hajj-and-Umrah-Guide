@@ -53,7 +53,10 @@ window.translations = {
     /* ——— التنويه الشرعي ——— */
     disclaimer_title: "تنويه",
     disclaimer_body:
-      "هذا الدليل للتذكير والإرشاد وليس فتوى. وإذا شككتَ في عدد الأشواط فالمرجع يقينُك أنت لا الجهاز، والأصل البناء على الأقل. وعند الإشكال فاسأل أهل العلم.",
+      "هذا دليلُ تذكيرٍ وإرشاد، أُنشئ محتواه استناداً إلى كتب أهل السنّة المعتبرة في المناسك، ويمكنك الاطّلاع على",
+    disclaimer_link: "المصادر التي بُني عليها",
+    disclaimer_tail:
+      "· وليس هذا الدليل فتوى؛ وإذا شككتَ في عدد الأشواط فالمرجع يقينُك أنت لا الجهاز، والأصل البناء على الأقل. وعند الإشكال فاسأل أهل العلم.",
 
     /* ——— شاشة الإرشاد ——— */
     guide_permission_title: "قبل البدء",
@@ -75,6 +78,14 @@ window.translations = {
     guide_next_stage: "أنهيتُ هذه المرحلة",
     guide_duas_btn: "الأذكار المستحبّة",
     guide_exit: "إنهاء",
+
+    /* ——— تنبيهات المرحلة الجارية ——— */
+    hint_raml: "أسرِع المشي مع تقارب الخُطا (الرمَل)، وأبقِ كتفك الأيمن مكشوفاً (الاضطباع).",
+    hint_walk: "امشِ على عادتك في الأشواط الباقية، والاضطباع باقٍ إلى نهاية الطواف.",
+    hint_tawaf_women: "امشي على هيئتك المعتادة، ولا اضطباع عليكِ ولا رمَل.",
+    hint_sai_run: "إذا بلغتَ العلمين الأخضرين فاسعَ بينهما سعياً شديداً، ثم امشِ.",
+    hint_sai_walk: "امشي على هيئتك المعتادة، ولا سعي بين العلمين الأخضرين.",
+    hint_hijr: "طُف من وراء الحِجْر فإنه من البيت.",
 
     /* ——— مصادر العدّ ——— */
     src_manual: "العدّ اليدوي",
@@ -187,7 +198,10 @@ window.translations = {
 
     disclaimer_title: "Please note",
     disclaimer_body:
-      "This guide is a reminder, not a religious verdict. If you doubt the number of circuits, your own certainty is the reference — not the device — and the default is to build on the lesser number. When in doubt, ask a scholar.",
+      "This is a guide for reminder and direction. Its content was compiled from recognised Sunni works on the rites of pilgrimage, and you may review",
+    disclaimer_link: "the sources it was built upon",
+    disclaimer_tail:
+      "· It is not a religious verdict. If you doubt the number of circuits, your own certainty is the reference — not the device — and the default is to build on the lesser number. When in doubt, ask a scholar.",
 
     guide_permission_title: "Before you begin",
     guide_permission_body:
@@ -208,6 +222,13 @@ window.translations = {
     guide_next_stage: "I finished this stage",
     guide_duas_btn: "Recommended supplications",
     guide_exit: "Exit",
+
+    hint_raml: "Walk briskly with short steps (Raml), keeping your right shoulder uncovered (Idtiba').",
+    hint_walk: "Walk normally for the remaining circuits; Idtiba' continues until the Tawaf ends.",
+    hint_tawaf_women: "Walk at your normal pace — Idtiba' and Raml do not apply to you.",
+    hint_sai_run: "When you reach the two green markers, jog briskly between them, then walk.",
+    hint_sai_walk: "Walk at your normal pace — jogging between the green markers does not apply to you.",
+    hint_hijr: "Walk outside the Hijr, for it is part of the House.",
 
     src_manual: "Manual count",
     src_gps: "Geolocation",
@@ -346,6 +367,14 @@ window.toggleTheme = function () {
   root.setAttribute("data-theme", next);
   try { localStorage.setItem("umrah_theme", next); } catch (e) { /* تجاهُل */ }
 };
+
+/* تسجيل عامل الخدمة ليعمل الدليل دون إنترنت.
+   يحتاج https أو localhost، ويُتجاوَز بصمتٍ إن تعذّر. */
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function () {
+    navigator.serviceWorker.register("sw.js").catch(function () { /* تجاهُل */ });
+  });
+}
 
 document.addEventListener("DOMContentLoaded", function () {
   window.applyTranslations(document);

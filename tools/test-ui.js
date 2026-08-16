@@ -112,11 +112,21 @@ function check(label, actual, expected) {
 
   await page.screenshot({ path: path.join(SHOTS, "06-guide-tawaf.png") });
 
-  /* لوحة الأذكار */
+  /* تنبيه الرمَل: مشروعٌ في الثلاثة الأُولى دون الأربعة الباقية */
+  check("تنبيه الشوط ظاهر", await page.locator("#stage-hint").isVisible(), true);
+  check("الشوط الرابع بلا رمَل", (await page.textContent("#stage-hint")).indexOf("على عادتك") > -1, true);
+
+  /* لوحة التنبيهات والأذكار */
   await page.click("#btn-duas");
   await page.waitForTimeout(400);
-  check("لوحة الأذكار مفتوحة", await page.locator("#dua-sheet.open").count(), 1);
+  check("اللوحة مفتوحة", await page.locator("#dua-sheet.open").count(), 1);
   check("أذكار الطواف معروضة", await page.locator("#dua-body .dhikr").count(), 2);
+
+  var sheet = await page.textContent("#dua-body");
+  check("التنبيهات الفقهية معروضة أثناء الطواف", sheet.indexOf("الحِجْر") > -1, true);
+  check("أحكام الرجال معروضة", sheet.indexOf("الاضطباع") > -1, true);
+  check("أحكام النساء غير معروضة للرجل", sheet.indexOf("لا اضطباع على المرأة") === -1, true);
+
   await page.screenshot({ path: path.join(SHOTS, "07-guide-duas.png") });
   await page.click("#btn-dua-close");
   await page.waitForTimeout(300);
@@ -175,6 +185,46 @@ function check(label, actual, expected) {
   check("مصدر العدّ معلَن", (await page.textContent("#source-text")).indexOf("تحديد الموقع") > -1, true);
   await page.screenshot({ path: path.join(SHOTS, "10-guide-sim.png") });
 
+  /* ——— اختيار المرأة يغيّر الأحكام المعروضة ——— */
+  console.log("\nأحكام النساء");
+  await page.goto(BASE + "/guide.html", { waitUntil: "networkidle" });
+  await page.waitForTimeout(300);
+  if (await page.locator("#screen-resume").isVisible()) {
+    await page.click("#btn-fresh");
+    await page.waitForTimeout(300);
+  }
+  await page.click("#btn-female");
+  await page.click("#btn-start-manual");
+  await page.waitForTimeout(300);
+  await page.click("#btn-stage-done");         // إلى الطواف
+  await page.waitForTimeout(300);
+
+  check("تنبيه المرأة في الطواف",
+    (await page.textContent("#stage-hint")).indexOf("لا اضطباع") > -1, true);
+
+  await page.click("#btn-duas");
+  await page.waitForTimeout(400);
+  var wSheet = await page.textContent("#dua-body");
+  check("أحكام النساء معروضة", wSheet.indexOf("لا اضطباع على المرأة") > -1, true);
+  check("أحكام الرجال غير معروضة للمرأة", wSheet.indexOf("تحت إبطه الأيمن") === -1, true);
+  await page.screenshot({ path: path.join(SHOTS, "13-guide-women.png") });
+  await page.click("#btn-dua-close");
+
+  /* ——— التنويه ورابط المصادر ——— */
+  console.log("\nالتنويه والمصادر");
+  await page.goto(BASE + "/index.html", { waitUntil: "networkidle" });
+  var link = page.locator(".notice .link-underline").first();
+  check("رابط المصادر موجود", await link.count(), 1);
+  check("الرابط يشير إلى صفحة المصادر", await link.getAttribute("href"), "sources.html");
+  check("الرابط مسطَّر",
+    await link.evaluate(function (el) { return getComputedStyle(el).textDecorationLine; }), "underline");
+  check("نصّ التنويه يذكر بناءه على المصادر",
+    (await page.textContent(".notice")).indexOf("استناداً إلى") > -1, true);
+
+  await link.click();
+  await page.waitForLoadState("networkidle");
+  check("النقر ينتقل إلى صفحة المصادر", page.url().indexOf("sources.html") > -1, true);
+
   /* ——— اللغة الإنجليزية ——— */
   console.log("\nاللغة الإنجليزية");
   await page.goto(BASE + "/index.html", { waitUntil: "networkidle" });
@@ -192,6 +242,59 @@ function check(label, actual, expected) {
   var enAyah = await page.locator(".dhikr .ayah").first().textContent();
   check("نصّ الآية عربي في الواجهة الإنجليزية", enAyah.indexOf("رَبَّنَا") > -1 || enAyah.indexOf("لَبَّيْكَ") > -1, true);
   await page.screenshot({ path: path.join(SHOTS, "12-manasik-english.png"), fullPage: true });
+
+  /* ——— لا اعتماد على خدمةٍ خارجية ——— */
+  console.log("\nالاستقلال عن الشبكة الخارجية");
+  var external = [];
+  page.on("request", function (r) {
+    if (r.url().indexOf(BASE) !== 0 && r.url().indexOf("data:") !== 0) external.push(r.url());
+  });
+  await page.goto(BASE + "/manasik.html", { waitUntil: "networkidle" });
+  check("لا طلبات إلى خوادم خارجية", external.length === 0 ? 0 : external.join(" | "), 0);
+
+  var fontLoaded = await page.evaluate(function () {
+    return document.fonts.check('1rem "Amiri Quran"');
+  });
+  check("خط المصحف محمَّل محلياً", fontLoaded, true);
+
+  /* ——— العمل دون إنترنت ——— */
+  console.log("\nالعمل دون إنترنت");
+  await page.goto(BASE + "/index.html", { waitUntil: "networkidle" });
+  await page.evaluate(function () {
+    return navigator.serviceWorker.ready.then(function () { return null; });
+  });
+  await page.waitForTimeout(2500); // مهلة تخزين الملفّات
+
+  /* عامل الخدمة مسجَّلٌ في هذا السياق، فيُقطَع الاتصال عنه هو لا عن سياقٍ
+     جديد؛ إذ لكل سياقٍ تخزينه المستقلّ ولا يرث تسجيل غيره. */
+  await context.setOffline(true);
+
+  await page.goto(BASE + "/index.html", { waitUntil: "domcontentloaded" });
+  check("الصفحة الأولى تفتح دون اتصال", (await page.textContent("h1")).length > 5, true);
+
+  await page.goto(BASE + "/guide.html", { waitUntil: "domcontentloaded" });
+  await page.waitForTimeout(800);
+  /* تظهر شاشة البدء أو شاشة الاستئناف بحسب وجود تقدّمٍ محفوظ، وأيّهما ظهرت
+     فقد عملت الصفحة وجافاسكربتها دون اتصال. */
+  var started = await page.locator("#screen-start").isVisible();
+  var resuming = await page.locator("#screen-resume").isVisible();
+  check("شاشة الإرشاد تفتح دون اتصال", started || resuming, true);
+
+  /* المكتبات المستضافة محلياً (٣ م.ب) تُحمَّل من المخزن لا من الشبكة */
+  check("مكتبة A-Frame محمَّلة دون اتصال",
+    await page.evaluate(function () { return typeof window.AFRAME !== "undefined"; }), true);
+  check("مكتبة MindAR محمَّلة دون اتصال",
+    await page.evaluate(function () {
+      return !!(window.AFRAME && window.AFRAME.components["mindar-image"]);
+    }), true);
+
+  await page.goto(BASE + "/manasik.html", { waitUntil: "domcontentloaded" });
+  await page.waitForTimeout(600);
+  check("دليل المناسك يُبنى دون اتصال", await page.locator(".rite-block").count(), 7);
+  check("الأذكار تُعرَض دون اتصال", (await page.locator(".dhikr").count()) > 8, true);
+  await page.screenshot({ path: path.join(SHOTS, "14-offline.png") });
+
+  await context.setOffline(false);
 
   /* ——— أخطاء التنفيذ ——— */
   console.log("\nسلامة التنفيذ");

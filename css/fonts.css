@@ -1,0 +1,103 @@
+/* =========================================================
+   الخطوط مستضافةٌ محلياً لا من خدمةٍ خارجية.
+   والسبب أن الشبكة داخل الحرم في المواسم مزدحمةٌ إلى حدّ الانقطاع،
+   ولأن الاعتماد على خادمٍ بعيدٍ يُخرج الموقع عن العمل دون إنترنت.
+
+   المصدر: حزم @fontsource على npm (رخصة SIL Open Font License).
+   ========================================================= */
+
+/* ——— Tajawal: نصّ المتن ——— */
+@font-face {
+  font-family: "Tajawal";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/tajawal-arabic-400-normal.woff2") format("woff2");
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
+}
+@font-face {
+  font-family: "Tajawal";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/tajawal-latin-400-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212;
+}
+
+@font-face {
+  font-family: "Tajawal";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("../fonts/tajawal-arabic-500-normal.woff2") format("woff2");
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
+}
+@font-face {
+  font-family: "Tajawal";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("../fonts/tajawal-latin-500-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+2000-206F, U+2074, U+20AC, U+2122;
+}
+
+@font-face {
+  font-family: "Tajawal";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("../fonts/tajawal-arabic-700-normal.woff2") format("woff2");
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
+}
+@font-face {
+  font-family: "Tajawal";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("../fonts/tajawal-latin-700-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+2000-206F, U+2074, U+20AC, U+2122;
+}
+
+/* ——— Reem Kufi: العناوين ——— */
+@font-face {
+  font-family: "Reem Kufi";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/reem-kufi-arabic-400-normal.woff2") format("woff2");
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
+}
+@font-face {
+  font-family: "Reem Kufi";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/reem-kufi-latin-400-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+2000-206F, U+2074, U+20AC, U+2122;
+}
+
+@font-face {
+  font-family: "Reem Kufi";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("../fonts/reem-kufi-arabic-600-normal.woff2") format("woff2");
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
+}
+@font-face {
+  font-family: "Reem Kufi";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("../fonts/reem-kufi-latin-600-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+2000-206F, U+2074, U+20AC, U+2122;
+}
+
+/* ——— Amiri Quran: الآيات والأذكار بالتشكيل الكامل ——— */
+@font-face {
+  font-family: "Amiri Quran";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/amiri-quran-arabic-400-normal.woff2") format("woff2");
+}

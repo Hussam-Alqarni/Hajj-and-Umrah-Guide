@@ -55,7 +55,13 @@ function walkSai(legs) {
   }
 }
 
+/* زمن التبريد عشرون ثانيةً حقيقية، فيُعطَّل مؤقّتاً لاختبار المسح المتكرّر */
+function markerCooldownBypass() {
+  C.MARKER_COOLDOWN_MS = 0;
+}
+
 function goToStage(id) {
+  C.MARKER_COOLDOWN_MS = 20000;
   T.reset();
   var guard = 0;
   while (T.getState().stage !== id && guard++ < 20) T.advanceStage();
@@ -124,11 +130,40 @@ check("التراجع لا ينزل تحت الصفر", T.getState().counts.tawa
 console.log("\nالماركرات");
 goToStage("tawaf");
 T.registerAnchor("hajar");
-check("ماركر الحجر يسجّل شوطاً", T.getState().counts.tawaf, 1);
+check("أول مسحة تُثبّت البداية ولا تُحتسب شوطاً", T.getState().counts.tawaf, 0);
 T.registerAnchor("hajar");
-check("زمن التبريد يمنع العدّ المضاعف", T.getState().counts.tawaf, 1);
+check("زمن التبريد يمنع العدّ المضاعف", T.getState().counts.tawaf, 0);
 T.registerAnchor("safa");
-check("ماركر لا يخصّ المرحلة لا يغيّر شيئاً", T.getState().counts.tawaf, 1);
+check("ماركر لا يخصّ المرحلة لا يغيّر شيئاً", T.getState().counts.tawaf, 0);
+
+/* بلا تحديد موقع يُعتمد على المسح وحده: كل مسحةٍ بعد الأولى شوط */
+goToStage("tawaf");
+T.registerAnchor("hajar");                       // البداية
+for (var m = 0; m < 7; m++) {
+  markerCooldownBypass();
+  T.registerAnchor("hajar");
+}
+check("سبع مسحاتٍ بعد البداية = سبعة أشواط", T.getState().counts.tawaf, 7);
+
+console.log("\nالتراجع في السعي");
+goToStage("sai");
+walkSai(1);
+check("شوط واحد", T.getState().counts.sai, 1);
+T.undoCircuit();
+check("بعد التراجع", T.getState().counts.sai, 0);
+walkSai(1);
+check("إعادة الشوط نفسه تُنتج شوطاً واحداً لا اثنين", T.getState().counts.sai, 1);
+
+goToStage("sai");
+walkSai(3);
+T.undoCircuit();
+walkSai(1);
+check("التراجع في منتصف السعي ثم المتابعة", T.getState().counts.sai, 3);
+
+console.log("\nنطاق الطواف");
+goToStage("tawaf");
+walkTawaf(2, 120, 4);
+check("الطواف في الأدوار العليا يُحتسب", T.getState().counts.tawaf, 2);
 
 console.log("\nتسلسل المراحل");
 T.reset();

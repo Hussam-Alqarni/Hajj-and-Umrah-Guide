@@ -260,6 +260,21 @@ a { color: var(--primary); }
 
 .notice strong { color: var(--primary); }
 
+/* رابطٌ مسطَّرٌ ظاهر السطر، يُنقر ليصل إلى المصادر */
+.link-underline {
+  color: var(--primary);
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--accent);
+}
+
+.link-underline:hover { text-decoration-color: var(--primary); }
+
+/* النسخة الموضوعة فوق الكاميرا في شاشة البدء */
+.overlay-screen .link-underline { color: var(--glass-accent); text-decoration-color: var(--glass-accent); }
+
 /* الأزرار */
 .btn {
   display: inline-flex;
@@ -369,13 +384,29 @@ a { color: var(--primary); }
 
 #guide-ui > * { pointer-events: auto; }
 
-/* الرموز الخاصة بالطبقة الداكنة الثابتة */
-#guide-ui, .status-panel, .dua-sheet {
-  --glass:      rgba(10, 10, 10, 0.82);
-  --glass-2:    rgba(255, 255, 255, 0.08);
-  --glass-line: rgba(255, 255, 255, 0.16);
-  --glass-text: #f3efe6;
-  --glass-muted:#a8a094;
+/* الرموز الخاصة بالطبقة الداكنة الثابتة.
+   طبقة الكاميرا داكنةٌ في الوضعين ليُقرأ النصّ فوق صورةٍ متغيّرة، ولذلك
+   لا يصلح أخضر الوضع الفاتح (--primary) نبرةً عليها لشدّة قتامته؛ فتُستعمل
+   نبرةٌ فاتحةٌ خاصّةٌ بها: أخضر مضيء في الوضع الفاتح وذهبٌ في الداكن. */
+#guide-ui, .status-panel, .dua-sheet, .overlay-screen {
+  --glass:        rgba(10, 10, 10, 0.82);
+  --glass-2:      rgba(255, 255, 255, 0.08);
+  --glass-line:   rgba(255, 255, 255, 0.16);
+  --glass-text:   #f3efe6;
+  --glass-muted:  #a8a094;
+  --glass-accent: #4fb383;
+}
+
+[data-theme="dark"] #guide-ui,
+[data-theme="dark"] .status-panel,
+[data-theme="dark"] .dua-sheet,
+[data-theme="dark"] .overlay-screen { --glass-accent: #d4af37; }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) #guide-ui,
+  :root:not([data-theme="light"]) .status-panel,
+  :root:not([data-theme="light"]) .dua-sheet,
+  :root:not([data-theme="light"]) .overlay-screen { --glass-accent: #d4af37; }
 }
 
 .status-panel {
@@ -400,7 +431,7 @@ a { color: var(--primary); }
   font-family: "Reem Kufi", sans-serif;
   font-size: 1.2rem;
   font-weight: 600;
-  color: var(--primary);
+  color: var(--glass-accent);
   margin: 0;
 }
 
@@ -436,14 +467,46 @@ a { color: var(--primary); }
   transition: background 0.25s ease, transform 0.25s ease;
 }
 
-.bead.done { background: var(--primary); border-color: var(--primary); }
-.bead.current { border-color: var(--primary); transform: scale(1.22); }
+.bead.done { background: var(--glass-accent); border-color: var(--glass-accent); }
+.bead.current { border-color: var(--glass-accent); transform: scale(1.22); }
 
 .task-now {
   font-size: 0.95rem;
   line-height: 1.7;
   color: var(--glass-text);
   margin: 0 0 0.55rem;
+}
+
+/* تنبيه المرحلة الجارية — يتغيّر بتغيّر الشوط */
+.stage-hint {
+  font-size: 0.88rem;
+  line-height: 1.65;
+  color: var(--glass-accent);
+  background: var(--glass-2);
+  border-inline-start: 3px solid var(--glass-accent);
+  border-radius: 8px;
+  padding: 0.5rem 0.7rem;
+  margin: 0 0 0.55rem;
+}
+
+/* عناوين لوحة التنبيهات والأذكار */
+.sheet-heading {
+  font-family: "Reem Kufi", "Tajawal", sans-serif;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--glass-accent);
+  margin: 1rem 0 0.4rem;
+}
+
+.dua-sheet section:first-child .sheet-heading { margin-top: 0; }
+
+.dua-sheet .list { color: var(--glass-text); font-size: 0.92rem; line-height: 1.8; }
+
+.sheet-gender {
+  border: 1px dashed var(--glass-line);
+  border-radius: 10px;
+  padding: 0.6rem 0.85rem;
+  margin-top: 0.9rem;
 }
 
 /* الوجهة والسهم */
@@ -467,7 +530,7 @@ a { color: var(--primary); }
   justify-content: center;
 }
 
-.compass svg { width: 1.5rem; height: 1.5rem; color: var(--primary); transition: transform 0.2s ease; }
+.compass svg { width: 1.5rem; height: 1.5rem; color: var(--glass-accent); transition: transform 0.2s ease; }
 
 .dest-label { font-size: 0.78rem; color: var(--glass-muted); margin: 0; }
 .dest-name  { font-size: 0.98rem; font-weight: 700; color: var(--glass-text); margin: 0; }
@@ -483,7 +546,7 @@ a { color: var(--primary); }
 }
 
 .source-dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--glass-muted); }
-.source-dot.live { background: var(--primary); }
+.source-dot.live { background: var(--glass-accent); }
 .source-dot.weak { background: var(--danger); }
 
 /* أدوات أسفل الشاشة */
@@ -497,8 +560,8 @@ a { color: var(--primary); }
   font-size: 1.05rem;
   font-weight: 700;
   font-family: inherit;
-  color: var(--on-primary);
-  background: var(--primary);
+  color: #0a1410;
+  background: var(--glass-accent);
   border: none;
   border-radius: 12px;
   cursor: pointer;
@@ -556,11 +619,11 @@ a { color: var(--primary); }
 
 .dua-sheet.open { transform: translateY(0); }
 
-.dua-sheet h3 { color: var(--primary); margin-bottom: 0.75rem; }
+.dua-sheet h3 { color: var(--glass-accent); margin-bottom: 0.75rem; }
 
 .dua-sheet .dhikr {
   background: var(--glass-2);
-  border-inline-start-color: var(--primary);
+  border-inline-start-color: var(--glass-accent);
   color: var(--glass-text);
 }
 
@@ -591,7 +654,7 @@ a { color: var(--primary); }
 }
 
 .overlay-screen.show { display: flex; }
-.overlay-screen h2 { color: var(--primary); }
+.overlay-screen h2 { color: var(--glass-accent); }
 .overlay-screen p { color: var(--glass-muted); max-width: 26rem; }
 .overlay-screen .btn-row { max-width: 22rem; width: 100%; }
 
