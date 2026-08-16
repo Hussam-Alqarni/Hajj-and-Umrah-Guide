@@ -41,6 +41,39 @@ function walkTawaf(laps, radius, stepDeg) {
   }
 }
 
+/** المشي حول الكعبة حتى زاويةٍ معيّنة دون إتمام الدورة. */
+function walkTawafPartial(degrees, radius, stepDeg) {
+  walkTawafFrom(0, degrees, radius, stepDeg);
+}
+
+/** المشي بين زاويتين مع إبقاء التسلسل متّصلاً كما يمشي الطائف. */
+function walkTawafFrom(fromDeg, toDeg, radius, stepDeg) {
+  for (var a = fromDeg; a <= toDeg; a += stepDeg) {
+    var p = G.destination(C.KAABA, -a, radius);
+    T.injectPosition(p.lat, p.lng, 6);
+  }
+}
+
+/** موضعٌ على محور المسعى بنسبة تقدّمٍ من الصفا إلى المروة. */
+function saiPoint(t) {
+  return {
+    lat: C.SAFA.lat + (C.MARWAH.lat - C.SAFA.lat) * t,
+    lng: C.SAFA.lng + (C.MARWAH.lng - C.SAFA.lng) * t
+  };
+}
+
+function walkSaiFrom(fromT, toT) {
+  var steps = 24;
+  for (var i = 0; i <= steps; i++) {
+    var p = saiPoint(fromT + (toT - fromT) * (i / steps));
+    T.injectPosition(p.lat, p.lng, 6);
+  }
+}
+
+function walkSaiPartial(toT) {
+  walkSaiFrom(0, toT);
+}
+
 function walkSai(legs) {
   var steps = 24;
   for (var leg = 0; leg < legs; leg++) {
@@ -164,6 +197,93 @@ console.log("\nنطاق الطواف");
 goToStage("tawaf");
 walkTawaf(2, 120, 4);
 check("الطواف في الأدوار العليا يُحتسب", T.getState().counts.tawaf, 2);
+
+/* =========================================================
+   تكامل المصادر الثلاثة
+   المصادر تعمل معاً في وقتٍ واحد لا بالتناوب، فيجب ألّا يُعيد مصدرٌ
+   عدَّ ما عدّه غيره، ولا أن يُسقط شوطاً ظنّاً أن غيره عدّه.
+   ========================================================= */
+
+console.log("\nتكامل: يدوي مع تحديد الموقع (الطواف)");
+goToStage("tawaf");
+walkTawafPartial(348, 25, 6);                 // قارب إتمام الدورة
+check("لم يُحتسب شيءٌ قبل إتمام الدورة", T.getState().counts.tawaf, 0);
+T.manualCount();                              // ضغط يدوياً عند الحجر
+check("الضغط اليدوي يسجّل الشوط", T.getState().counts.tawaf, 1);
+walkTawafFrom(348, 372, 25, 6);               // أكمل الدورة مشياً
+check("الموقع لا يُعيد عدّ ما عدّه اليدوي", T.getState().counts.tawaf, 1);
+
+console.log("\nتكامل: يدوي مع تحديد الموقع (السعي)");
+goToStage("sai");
+walkSaiPartial(0.85);                          // قارب المروة
+T.manualCount();                               // ضغط يدوياً عند بلوغه
+check("الضغط اليدوي يسجّل الشوط", T.getState().counts.sai, 1);
+walkSaiFrom(0.85, 1.0);                        // أتمّ الوصول
+check("الموقع لا يُعيد عدّ ما عدّه اليدوي", T.getState().counts.sai, 1);
+
+console.log("\nتكامل: ماركر مع تحديد الموقع (الطواف)");
+goToStage("tawaf");
+T.registerAnchor("hajar");                     // تثبيت البداية
+walkTawaf(1, 25, 6);
+check("الموقع يعدّ الدورة الأولى", T.getState().counts.tawaf, 1);
+C.MARKER_COOLDOWN_MS = 0;
+T.registerAnchor("hajar");                     // مسح عند الحجر بعد الدورة
+check("الماركر لا يُعيد عدّ الدورة نفسها", T.getState().counts.tawaf, 1);
+
+console.log("\nتكامل: ماركر ثم موقع في السعي");
+goToStage("sai");
+C.MARKER_COOLDOWN_MS = 0;
+T.registerAnchor("marwah");                    // مسح عند المروة
+check("الماركر يسجّل الشوط الأول", T.getState().counts.sai, 1);
+walkSaiFrom(0.9, 1.0);                         // الموقع يبلغ المروة أيضاً
+check("الموقع لا يُعيد عدّه", T.getState().counts.sai, 1);
+walkSaiFrom(1.0, 0.0);                         // رجع إلى الصفا
+check("الرجوع إلى الصفا شوطٌ ثانٍ", T.getState().counts.sai, 2);
+
+console.log("\nتكامل: الضغط اليدوي والمسح في الموضع نفسه");
+goToStage("tawaf");
+C.MARKER_COOLDOWN_MS = 0;
+walkTawafPartial(348, 25, 6);
+T.manualCount();
+T.registerAnchor("hajar");                     // مسحٌ في الموضع نفسه بلا مشي
+check("المسح في موضع الضغط اليدوي لا يُضاعف العدّ", T.getState().counts.tawaf, 1);
+
+console.log("\nتكامل: مسارٌ كاملٌ مختلط");
+goToStage("tawaf");
+C.MARKER_COOLDOWN_MS = 0;
+var deg = 0;
+T.registerAnchor("hajar");                     // البداية بالماركر — لا تُحتسب
+
+walkTawafFrom(deg, deg + 720, 25, 6); deg += 720;   // شوطان بالموقع
+check("شوطان بالموقع", T.getState().counts.tawaf, 2);
+
+T.manualCount();                                     // شوطٌ يدوي
+check("وشوطٌ يدوي", T.getState().counts.tawaf, 3);
+
+/* مشى أكثر الدورة ثم بلغ الحجر فمسح الماركر: الماركر أضبط في تحديد
+   حدّ الشوط من تقدير الموقع، فيُحتسب به. */
+walkTawafFrom(deg, deg + 340, 25, 6); deg += 340;
+check("لم تكتمل الدورة بالموقع بعد", T.getState().counts.tawaf, 3);
+T.registerAnchor("hajar");
+check("الماركر يُتمّ الشوط الرابع", T.getState().counts.tawaf, 4);
+
+walkTawafFrom(deg, deg + 1080, 25, 6); deg += 1080;  // ثلاثة بالموقع
+check("سبعة أشواط من مصادر مختلطة", T.getState().counts.tawaf, 7);
+check("اكتملت المرحلة", T.getState().awaitingConfirm, true);
+check("لا يتجاوز السبعة بمزيدٍ من المشي",
+  (walkTawaf(2, 25, 6), T.getState().counts.tawaf), 7);
+check("ولا بضغطٍ يدوي", (T.manualCount(), T.getState().counts.tawaf), 7);
+check("ولا بمسح ماركر", (T.registerAnchor("hajar"), T.getState().counts.tawaf), 7);
+
+console.log("\nتكامل: التراجع وسط مسارٍ مختلط");
+goToStage("tawaf");
+C.MARKER_COOLDOWN_MS = 0;
+T.registerAnchor("hajar");
+walkTawaf(3, 25, 6);
+T.undoCircuit();
+check("التراجع بعد عدٍّ بالموقع", T.getState().counts.tawaf, 2);
+walkTawaf(1, 25, 6);
+check("المتابعة بعد التراجع تُنتج شوطاً واحداً", T.getState().counts.tawaf, 3);
 
 console.log("\nتسلسل المراحل");
 T.reset();

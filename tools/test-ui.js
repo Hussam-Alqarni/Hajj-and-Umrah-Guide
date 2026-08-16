@@ -8,11 +8,46 @@
    ========================================================= */
 
 var fs = require("fs");
+var http = require("http");
 var path = require("path");
 var chromium = require("playwright").chromium;
 
-var BASE = process.argv[2] || "http://127.0.0.1:8099";
+var ROOT = path.join(__dirname, "..");
 var SHOTS = path.join(__dirname, "screenshots");
+var BASE = process.argv[2] || null;   // يُمرَّر عنوانٌ خارجي، وإلا شُغِّل خادمٌ داخلي
+
+var TYPES = {
+  ".html": "text/html; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".png": "image/png",
+  ".svg": "image/svg+xml",
+  ".woff2": "font/woff2",
+  ".mind": "application/octet-stream"
+};
+
+/* خادمٌ داخليّ حتى لا يعتمد الاختبار على خادمٍ يُشغَّل يدوياً فينقطع بينه وبينه */
+function serve() {
+  return new Promise(function (resolve) {
+    var server = http.createServer(function (req, res) {
+      var rel = decodeURIComponent(req.url.split("?")[0]);
+      if (rel === "/") rel = "/index.html";
+
+      var file = path.join(ROOT, path.normalize(rel).replace(/^(\.\.[/\\])+/, ""));
+      if (!file.startsWith(ROOT) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) {
+        res.writeHead(404); return res.end();
+      }
+
+      res.writeHead(200, {
+        "Content-Type": TYPES[path.extname(file)] || "application/octet-stream",
+        "Service-Worker-Allowed": "/"
+      });
+      fs.createReadStream(file).pipe(res);
+    });
+    server.listen(0, "127.0.0.1", function () { resolve(server); });
+  });
+}
 
 var pass = 0, fail = 0;
 function check(label, actual, expected) {
@@ -23,6 +58,13 @@ function check(label, actual, expected) {
 
 (async function () {
   if (!fs.existsSync(SHOTS)) fs.mkdirSync(SHOTS, { recursive: true });
+
+  var server = null;
+  if (!BASE) {
+    server = await serve();
+    BASE = "http://127.0.0.1:" + server.address().port;
+    console.log("الخادم: " + BASE);
+  }
 
   var browser = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium" });
   var context = await browser.newContext({
@@ -210,6 +252,100 @@ function check(label, actual, expected) {
   await page.screenshot({ path: path.join(SHOTS, "13-guide-women.png") });
   await page.click("#btn-dua-close");
 
+  /* ——— شاشة الحلق والختام ——— */
+  console.log("\nالحلق والختام");
+  await page.goto(BASE + "/guide.html", { waitUntil: "networkidle" });
+  await page.waitForTimeout(300);
+  if (await page.locator("#screen-resume").isVisible()) {
+    await page.click("#btn-fresh");
+    await page.waitForTimeout(300);
+  }
+  await page.click("#btn-start-manual");
+  await page.waitForTimeout(300);
+
+  /* القفز إلى مرحلة الحلق */
+  await page.evaluate(function () {
+    for (var i = 0; i < 5; i++) window.Tracker.completeStage();
+  });
+  await page.waitForTimeout(400);
+
+  check("المرحلة هي الحلق", await page.evaluate(function () {
+    return window.Tracker.getState().stage;
+  }), "halq");
+  check("شاشة الحلق ظاهرة", await page.locator("#screen-halq").isVisible(), true);
+  check("الكاميرا مُطفأة", await page.locator("#camera-layer.camera-on").count(), 0);
+  check("التوجيهات معروضة", (await page.textContent("#halq-notes")).indexOf("بعد الفراغ من السعي") > -1, true);
+  check("حكمها واجب", (await page.textContent("#halq-hukm")).trim(), "واجب");
+  await page.screenshot({ path: path.join(SHOTS, "15-halq.png") });
+
+  await page.click("#btn-halq-done");
+  await page.waitForTimeout(400);
+  check("شاشة الختام ظاهرة", await page.locator("#screen-done").isVisible(), true);
+  check("لا زرّ عمرة جديدة", await page.locator("#btn-again").count(), 0);
+  check("مدّة العمرة معروضة", (await page.textContent("#done-duration-text")).length > 1, true);
+  await page.screenshot({ path: path.join(SHOTS, "16-done.png") });
+
+  /* ——— عدّاد الوقت ——— */
+  console.log("\nعدّاد الوقت");
+  var elapsed = await page.evaluate(function () {
+    var s = window.Tracker.getState();
+    return { started: !!s.startedAt, finished: !!s.finishedAt };
+  });
+  check("وقت البدء مسجَّل", elapsed.started, true);
+  check("وقت الانتهاء مسجَّل فيتجمّد العدّاد", elapsed.finished, true);
+
+  /* عدّاد يعرض الساعات والدقائق دون ثوانٍ */
+  await page.goto(BASE + "/guide.html", { waitUntil: "networkidle" });
+  await page.waitForTimeout(300);
+  await page.click("#btn-fresh");
+  await page.waitForTimeout(200);
+  await page.click("#btn-start-manual");
+  await page.waitForTimeout(300);
+
+  var shown = (await page.textContent("#elapsed-text")).trim();
+  check("صيغة العدّاد ساعات:دقائق", /^[٠-٩0-9]+:[٠-٩0-9]{2}$/.test(shown), true);
+  check("العدّاد ظاهر", await page.locator("#elapsed").isVisible(), true);
+
+  /* محاكاة مرور ثمانين دقيقة بتقديم وقت البدء، مع تقدّمٍ يُتيح الاستئناف */
+  await page.evaluate(function () {
+    var raw = JSON.parse(localStorage.getItem("umrah_progress_v1"));
+    raw.startedAt = Date.now() - (80 * 60 * 1000);
+    raw.stage = "tawaf";
+    raw.counts = { tawaf: 2, sai: 0 };
+    localStorage.setItem("umrah_progress_v1", JSON.stringify(raw));
+  });
+  await page.goto(BASE + "/guide.html", { waitUntil: "networkidle" });
+  await page.waitForTimeout(300);
+  await page.click("#btn-resume");
+  await page.waitForTimeout(200);
+  await page.click("#btn-start-manual");
+  await page.waitForTimeout(400);
+  check("ثمانون دقيقة تُعرَض ١:٢٠", (await page.textContent("#elapsed-text")).trim(), "١:٢٠");
+
+  /* تمييز العدد في العربية: مفردٌ ومثنّى وجمع قلّةٍ ومفردٌ منصوب */
+  var durations = await page.evaluate(function () {
+    var out = {};
+    [0, 1, 2, 5, 11, 60, 80, 120, 190].forEach(function (min) {
+      var s = window.Tracker.getState();
+      out[min] = window.__formatDuration(min * 60000);
+    });
+    return out;
+  });
+  check("أقلّ من دقيقة", durations["0"], "أقلَّ من دقيقة");
+  check("المفرد للواحد", durations["1"], "دقيقةً واحدة");
+  check("المثنّى للاثنين", durations["2"], "دقيقتين");
+  check("جمع القلّة من ثلاثةٍ إلى عشرة", durations["5"], "٥ دقائق");
+  check("المفرد المنصوب فوق العشرة", durations["11"], "١١ دقيقةً");
+  check("الساعة الواحدة", durations["60"], "ساعةً واحدة");
+  check("ساعةٌ ودقائق", durations["80"], "ساعةً واحدة و٢٠ دقيقةً");
+  check("الساعتان", durations["120"], "ساعتين");
+  check("ثلاث ساعاتٍ وعشر دقائق", durations["190"], "٣ ساعاتٍ و١٠ دقائق");
+
+  /* ——— اسم زرّ التنبيهات ——— */
+  console.log("\nتسمية الأزرار");
+  check("الزرّ يجمع التنبيهات والأذكار",
+    (await page.textContent("#btn-duas")).trim(), "التنبيهات والأذكار المستحبّة");
+
   /* ——— التنويه ورابط المصادر ——— */
   console.log("\nالتنويه والمصادر");
   await page.goto(BASE + "/index.html", { waitUntil: "networkidle" });
@@ -301,6 +437,7 @@ function check(label, actual, expected) {
   check("لا أخطاء جافاسكربت", errors.length === 0 ? 0 : errors.join(" | "), 0);
 
   await browser.close();
+  if (server) server.close();
 
   console.log("\n" + (fail === 0
     ? "نجحت جميع اختبارات الواجهة (" + pass + ")"

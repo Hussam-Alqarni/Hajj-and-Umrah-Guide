@@ -76,7 +76,7 @@ window.translations = {
     guide_count_btn: "سجِّل شوطاً",
     guide_undo_btn: "تراجع",
     guide_next_stage: "أنهيتُ هذه المرحلة",
-    guide_duas_btn: "الأذكار المستحبّة",
+    guide_duas_btn: "التنبيهات والأذكار المستحبّة",
     guide_exit: "إنهاء",
 
     /* ——— تنبيهات المرحلة الجارية ——— */
@@ -104,7 +104,13 @@ window.translations = {
     stage_continue: "متابعة",
     umrah_done_title: "تقبّل الله منك",
     umrah_done_body: "تمّت عمرتك بالحلق أو التقصير، وحللتَ من إحرامك.",
-    umrah_done_again: "بدء عمرة جديدة",
+    halq_confirm: "أنهيتُ الحلق أو التقصير",
+    elapsed_label: "منذ بدء العمرة",
+    done_duration: "استغرقت عمرتك",
+    hours_short: "س",
+    minutes_short: "د",
+    minutes_word: "دقيقة",
+    less_than_minute: "أقلَّ من دقيقة",
 
     /* ——— دليل المناسك ——— */
     manasik_h1: "دليل العمرة",
@@ -220,7 +226,7 @@ window.translations = {
     guide_count_btn: "Record a circuit",
     guide_undo_btn: "Undo",
     guide_next_stage: "I finished this stage",
-    guide_duas_btn: "Recommended supplications",
+    guide_duas_btn: "Notes & recommended supplications",
     guide_exit: "Exit",
 
     hint_raml: "Walk briskly with short steps (Raml), keeping your right shoulder uncovered (Idtiba').",
@@ -246,7 +252,13 @@ window.translations = {
     umrah_done_title: "May Allah accept it from you",
     umrah_done_body:
       "Your Umrah is complete with the shaving or shortening of the hair, and you have exited the state of Ihram.",
-    umrah_done_again: "Start a new Umrah",
+    halq_confirm: "I have shaved or shortened",
+    elapsed_label: "Since starting Umrah",
+    done_duration: "Your Umrah took",
+    hours_short: "h",
+    minutes_short: "m",
+    minutes_word: "minutes",
+    less_than_minute: "less than a minute",
 
     manasik_h1: "The Rites of Umrah",
     manasik_lead:

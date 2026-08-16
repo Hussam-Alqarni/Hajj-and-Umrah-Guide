@@ -32,7 +32,13 @@
     duaBody:      el("dua-body"),
     stageDoneBody:el("stage-done-body"),
     btnCount:     el("btn-count"),
-    live:         el("live-region")
+    live:         el("live-region"),
+    elapsed:      el("elapsed"),
+    elapsedText:  el("elapsed-text"),
+    screenHalq:   el("screen-halq"),
+    halqNotes:    el("halq-notes"),
+    halqHukm:     el("halq-hukm"),
+    doneDuration: el("done-duration-text")
   };
 
   var heading = null;      // اتجاه الجهاز بالدرجات، أو null إن لم تتوفّر البوصلة
@@ -97,8 +103,116 @@
 
     renderSource(state);
     updateArrow(state);
+    renderElapsed(state);
 
-    if (rite.id === "done") show(ui.screenDone);
+    /* المرحلتان الأخيرتان لا تحتاجان كاميرا: الحلق يقع خارج المطاف والمسعى،
+       فتُطفأ الكاميرا وتُعرَض التوجيهات في شاشةٍ كاملةٍ أوضحَ وأوفرَ للبطارية. */
+    if (rite.id === "halq") {
+      stopCamera();
+      renderHalq(state);
+      show(ui.screenHalq);
+    } else {
+      hide(ui.screenHalq);
+    }
+
+    if (rite.id === "done") {
+      stopCamera();
+      hide(ui.screenHalq);
+      ui.doneDuration.textContent = formatDuration(elapsedMs(state));
+      show(ui.screenDone);
+    }
+  }
+
+  /* ——— زمن العمرة ——— */
+
+  function elapsedMs(state) {
+    if (!state.startedAt) return 0;
+    return (state.finishedAt || Date.now()) - state.startedAt;
+  }
+
+  /**
+   * صياغة المدّة نصّاً سليماً.
+   * والعربية تُميّز العدد على أربع صور: المفرد للواحد، والمثنّى للاثنين،
+   * وجمع القلّة من ثلاثةٍ إلى عشرة، ثم المفرد المنصوب فيما فوقها. فلا يصحّ
+   * أن يُقال «٣ دقيقة» ولا «١١ دقائق».
+   */
+  function arabicPlural(n, forms) {
+    if (n === 1) return forms.one;
+    if (n === 2) return forms.two;
+    if (n >= 3 && n <= 10) return num(n) + " " + forms.few;
+    return num(n) + " " + forms.many;
+  }
+
+  function formatDuration(ms) {
+    var totalMin = Math.floor(ms / 60000);
+    var h = Math.floor(totalMin / 60);
+    var m = totalMin % 60;
+
+    if (window.currentLang !== "ar") {
+      if (totalMin < 1) return window.t("less_than_minute");
+      var parts = [];
+      if (h > 0) parts.push(h + (h === 1 ? " hour" : " hours"));
+      if (m > 0) parts.push(m + (m === 1 ? " minute" : " minutes"));
+      return parts.join(" and ");
+    }
+
+    if (totalMin < 1) return window.t("less_than_minute");
+
+    var hourForms = { one: "ساعةً واحدة", two: "ساعتين", few: "ساعاتٍ", many: "ساعةً" };
+    var minForms  = { one: "دقيقةً واحدة", two: "دقيقتين", few: "دقائق",  many: "دقيقةً" };
+
+    if (h === 0) return arabicPlural(m, minForms);
+    if (m === 0) return arabicPlural(h, hourForms);
+    return arabicPlural(h, hourForms) + " و" + arabicPlural(m, minForms);
+  }
+
+  window.__formatDuration = formatDuration; // للاختبار الآلي
+
+  function renderElapsed(state) {
+    if (!state.startedAt) { ui.elapsed.style.display = "none"; return; }
+    ui.elapsed.style.display = "";
+
+    var totalMin = Math.floor(elapsedMs(state) / 60000);
+    var h = Math.floor(totalMin / 60);
+    var m = totalMin % 60;
+    ui.elapsedText.textContent = num(h) + ":" + num(m < 10 ? "0" + m : m);
+    ui.elapsed.title = window.t("elapsed_label");
+  }
+
+  /* ——— شاشة الحلق ——— */
+
+  function renderHalq(state) {
+    ui.halqHukm.textContent = window.riteHukm(state.rite);
+    ui.halqNotes.innerHTML = "";
+
+    var notes = window.riteText(state.rite.notes);
+    if (notes.length) ui.halqNotes.appendChild(listOf(notes));
+
+    var own = state.gender === "female"
+      ? window.riteText(state.rite.womenOnly)
+      : window.riteText(state.rite.menOnly);
+
+    if (own.length) {
+      var label = state.gender === "female" ? window.t("women_note") : window.t("men_note");
+      ui.halqNotes.appendChild(section(label, listOf(own), true));
+    }
+  }
+
+  /** إيقاف الكاميرا وتحرير عدستها، فلا حاجة إليها في المرحلتين الأخيرتين. */
+  function stopCamera() {
+    var layer = el("camera-layer");
+    if (!layer.classList.contains("camera-on")) return;
+
+    layer.querySelectorAll("video").forEach(function (video) {
+      if (video.srcObject) {
+        video.srcObject.getTracks().forEach(function (track) { track.stop(); });
+        video.srcObject = null;
+      }
+    });
+
+    layer.innerHTML = "";
+    layer.classList.remove("camera-on");
+    visualTracking = false;
   }
 
   /**
@@ -427,6 +541,10 @@
     window.Tracker.setGender(gender);
     requestWakeLock();
 
+    /* الدقيقة أدقّ وحدةٍ معروضة، فتكفي مراجعةٌ كل عشرين ثانية ليتغيّر
+       الرقم في حينه دون إنهاكٍ للبطارية. */
+    setInterval(function () { renderElapsed(window.Tracker.getState()); }, 20000);
+
     if (auto) {
       window.Tracker.startGeolocation();
       startCompass();
@@ -452,9 +570,13 @@
     window.Tracker.undoCircuit();
   });
 
-  el("btn-again").addEventListener("click", function () {
-    hide(ui.screenDone);
-    window.Tracker.reset();
+  el("btn-halq-done").addEventListener("click", function () {
+    window.Tracker.completeStage();   // إلى مرحلة التحلّل
+  });
+
+  el("btn-halq-back").addEventListener("click", function () {
+    hide(ui.screenHalq);
+    window.Tracker.goBackStage();
   });
 
   el("btn-duas").addEventListener("click", function () {

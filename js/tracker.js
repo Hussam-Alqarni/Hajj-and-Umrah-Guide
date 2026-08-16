@@ -20,7 +20,8 @@ window.Tracker = (function () {
     accuracy: null,       // بالمتر، أو null إن لم تصل عيّنة بعد
     trackingOn: false,
     awaitingConfirm: false,
-    startedAt: null
+    startedAt: null,
+    finishedAt: null
   };
 
   /* حالة داخلية لا تُحفظ ولا تُعرَض */
@@ -51,6 +52,20 @@ window.Tracker = (function () {
     return count % 2 === 1 ? "marwah" : "safa";
   }
 
+  /**
+   * مزامنة الحالة الهندسية مع العدّ بعد تسجيل أي شوط.
+   *
+   * وهي مركزيةٌ عمداً: فالمصادر الثلاثة تعمل معاً في وقتٍ واحد، ومن سجّل
+   * شوطاً بيده عند الحجر — وقد قارب الموقعُ إتمام الدورة — كان الموقع
+   * يحتسبه ثانيةً بعد خطوات. فأيّاً كان مصدر الشوط تُصفَّر المراكمة ويُشتقّ
+   * طرف السعي من العدّ الجديد، فلا يستطيع مصدرٌ أن يُعيد عدّ ما عدّه غيره.
+   */
+  function syncGeoState() {
+    gps.accum = 0;
+    gps.lastBearing = null;
+    gps.lastEnd = saiEndFor(state.counts.sai);
+  }
+
   /* ——— الأحداث ——— */
   function on(evt, fn) {
     (listeners[evt] = listeners[evt] || []).push(fn);
@@ -67,7 +82,8 @@ window.Tracker = (function () {
         stage: state.stage,
         counts: state.counts,
         gender: state.gender,
-        startedAt: state.startedAt
+        startedAt: state.startedAt,
+        finishedAt: state.finishedAt
       }));
     } catch (e) { /* التخزين محجوب — يعمل الدليل بلا حفظ */ }
   }
@@ -119,7 +135,9 @@ window.Tracker = (function () {
       source: state.source,
       accuracy: state.accuracy,
       trackingOn: state.trackingOn,
-      awaitingConfirm: state.awaitingConfirm
+      awaitingConfirm: state.awaitingConfirm,
+      startedAt: state.startedAt,
+      finishedAt: state.finishedAt
     };
   }
 
@@ -137,6 +155,7 @@ window.Tracker = (function () {
 
     state.counts[key] += 1;
     state.source = source;
+    syncGeoState();
 
     if (state.counts[key] >= rite.count) {
       state.awaitingConfirm = true;
@@ -158,11 +177,9 @@ window.Tracker = (function () {
     state.counts[key] -= 1;
     state.awaitingConfirm = false;
     state.source = "manual";
-    gps.accum = 0;
-    gps.lastBearing = null;
     // بعد التراجع يعود الساعي إلى الطرف الموافق للعدّ الجديد، وإلا احتُسب
     // الشوط التالي مرّتين: مرّةً عند مغادرة الطرف ومرّةً عند بلوغ مقابله.
-    gps.lastEnd = saiEndFor(state.counts.sai);
+    syncGeoState();
     changed();
     return true;
   }
@@ -174,6 +191,8 @@ window.Tracker = (function () {
 
     state.stage = window.RITES[idx + 1].id;
     state.awaitingConfirm = false;
+    // يتوقّف عدّاد الوقت ببلوغ التحلّل فيُعرَض زمن العمرة ثابتاً لا متزايداً
+    if (state.stage === "done" && !state.finishedAt) state.finishedAt = Date.now();
     gps.accum = 0;
     gps.lastBearing = null;
     gps.lastEnd = saiEndFor(state.counts.sai);
@@ -185,6 +204,24 @@ window.Tracker = (function () {
   /** إنهاء مرحلةٍ ليس فيها عدُّ أشواط (كالصلاة وزمزم والحلق). */
   function completeStage() {
     advanceStage();
+  }
+
+  /**
+   * الرجوع مرحلةً إلى الوراء، لمن تجاوز مرحلةً قبل إتمامها.
+   * ولا يُطلَب التأكيد ثانيةً عند الرجوع إلى مرحلة أشواطٍ مكتملة، بل يُترك
+   * العدّ على حاله ليتمكّن صاحبه من التراجع عن شوطٍ إن ظنّ أنه أخطأ.
+   */
+  function goBackStage() {
+    var idx = window.getRiteIndex(state.stage);
+    if (idx <= 0) return;
+
+    state.stage = window.RITES[idx - 1].id;
+    state.awaitingConfirm = false;
+    state.finishedAt = null;
+    gps.tawafAnchored = false;
+    markerCooldown = {};
+    syncGeoState();
+    changed();
   }
 
   function setGender(g) {
@@ -244,8 +281,13 @@ window.Tracker = (function () {
     gps.accum += delta;
 
     if (Math.abs(gps.accum) >= window.CONFIG.LAP_DEG) {
-      gps.accum -= Math.sign(gps.accum) * 360;
-      addCircuit("gps");
+      /* الفائض عن الدورة يُستأنف منه الشوط التالي بدل إهداره، وإلا تراكم
+         نقصٌ بقدر خطوةٍ في كل شوط. ويُستعاد بعد التصفير المركزي. */
+      var remainder = gps.accum - Math.sign(gps.accum) * 360;
+      if (addCircuit("gps")) {
+        gps.accum = remainder;
+        gps.lastBearing = b;
+      }
     }
   }
 
@@ -264,11 +306,10 @@ window.Tracker = (function () {
 
     var zone = window.CONFIG.SAI_END_ZONE;
 
+    /* الطرف الجديد تضبطه syncGeoState اشتقاقاً من العدّ، فلا يُضبط هنا */
     if (proj.t >= 1 - zone && gps.lastEnd === "safa") {
-      gps.lastEnd = "marwah";
       addCircuit("gps");
     } else if (proj.t <= zone && gps.lastEnd === "marwah") {
-      gps.lastEnd = "safa";
       addCircuit("gps");
     }
   }
@@ -341,7 +382,6 @@ window.Tracker = (function () {
       /* الشوط ببلوغ طرفٍ مخالفٍ للطرف الذي انتهى عنده الشوط السابق،
          فالوقوف الطويل عند طرفٍ واحدٍ ومسحُه مراراً لا يزيد العدّ. */
       if (anchorId !== gps.lastEnd && (anchorId === "safa" || anchorId === "marwah")) {
-        gps.lastEnd = anchorId;
         return addCircuit("marker");
       }
       return false;
@@ -372,6 +412,7 @@ window.Tracker = (function () {
         state.counts = { tawaf: saved.counts.tawaf || 0, sai: saved.counts.sai || 0 };
         state.gender = saved.gender || "male";
         state.startedAt = saved.startedAt;
+        state.finishedAt = saved.finishedAt || null;
         // استئناف سعيٍ في منتصفه يجب أن يعرف الطرف الذي وقف عنده صاحبه
         gps.lastEnd = saiEndFor(state.counts.sai);
       }
@@ -388,6 +429,7 @@ window.Tracker = (function () {
     state.source = "manual";
     state.awaitingConfirm = false;
     state.startedAt = Date.now();
+    state.finishedAt = null;
     gps.accum = 0;
     gps.lastBearing = null;
     gps.lastFixAt = 0;
@@ -409,6 +451,7 @@ window.Tracker = (function () {
     undoCircuit: undoCircuit,
     advanceStage: advanceStage,
     completeStage: completeStage,
+    goBackStage: goBackStage,
     registerAnchor: registerAnchor,
     startGeolocation: startGeolocation,
     stopGeolocation: stopGeolocation,

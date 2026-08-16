@@ -477,6 +477,70 @@ a { color: var(--primary); }
   margin: 0 0 0.55rem;
 }
 
+.status-meta { display: flex; align-items: center; gap: 0.4rem; }
+
+/* عدّاد الزمن منذ بدء العمرة — ساعاتٌ ودقائق بلا ثوانٍ */
+.elapsed {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--glass-muted);
+  border: 1px solid var(--glass-line);
+  border-radius: 999px;
+  padding: 0.12rem 0.5rem;
+  white-space: nowrap;
+}
+
+.elapsed svg { opacity: 0.8; }
+
+/* ——— شاشة الحلق: لا كاميرا، فالمساحة كلها للتوجيهات ——— */
+.halq-screen { justify-content: flex-start; overflow-y: auto; padding-top: 2rem; }
+
+.halq-inner { max-width: 30rem; width: 100%; text-align: start; }
+
+.halq-inner h2 { margin: 0.6rem 0 0.4rem; }
+
+.halq-inner .hukm {
+  color: var(--glass-accent);
+  background: var(--glass-2);
+  border-color: var(--glass-line);
+}
+
+.halq-lead {
+  font-size: 1.05rem;
+  line-height: 1.85;
+  color: var(--glass-text);
+  margin-bottom: 1.1rem;
+}
+
+#halq-notes { margin-bottom: 1.4rem; }
+#halq-notes .list { color: var(--glass-text); font-size: 0.95rem; line-height: 1.85; }
+#halq-notes .sheet-gender { border: 1px dashed var(--glass-line); border-radius: 10px; padding: 0.6rem 0.9rem; }
+
+.halq-inner .btn-primary {
+  background: var(--glass-accent);
+  color: #0a1410;
+  margin-bottom: 0.6rem;
+}
+
+.halq-inner .btn-outline { color: var(--glass-text); border-color: var(--glass-line); }
+
+/* ——— شاشة الختام ——— */
+.done-mark { color: var(--glass-accent); margin-bottom: 0.75rem; }
+
+.done-duration {
+  font-size: 0.95rem;
+  color: var(--glass-muted);
+  border-top: 1px solid var(--glass-line);
+  padding-top: 0.9rem;
+  margin-top: 0.4rem;
+}
+
+.done-duration strong { color: var(--glass-accent); font-variant-numeric: tabular-nums; }
+
 /* تنبيه المرحلة الجارية — يتغيّر بتغيّر الشوط */
 .stage-hint {
   font-size: 0.88rem;

@@ -68,7 +68,16 @@
     <div class="status-panel">
       <div class="status-top">
         <h1 class="stage-name" id="stage-name">الإحرام</h1>
-        <span class="stage-hukm" id="stage-hukm">ركن</span>
+        <div class="status-meta">
+          <!-- الزمن منذ بدء العمرة: ساعاتٌ ودقائق بلا ثوانٍ -->
+          <span class="elapsed" id="elapsed" title="منذ بدء العمرة">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" />
+            </svg>
+            <span id="elapsed-text">٠:٠٠</span>
+          </span>
+          <span class="stage-hukm" id="stage-hukm">ركن</span>
+        </div>
       </div>
 
       <div class="shawt-line" id="shawt-line">
@@ -134,13 +143,38 @@
     </div>
   </div>
 
+  <!-- ——— الحلق أو التقصير: لا حاجة للكاميرا هنا، فتُطفأ وتُعرَض التوجيهات ——— -->
+  <div id="screen-halq" class="overlay-screen halq-screen">
+    <div class="halq-inner">
+      <span class="hukm" data-hukm="واجب" id="halq-hukm">واجب</span>
+      <h2 data-i18n="rite_halq_title">الحلق أو التقصير</h2>
+      <p class="halq-lead" data-i18n="rite_halq_task">احلِق رأسك أو قصِّر من جميعه، وبذلك تتمّ عمرتك.</p>
+
+      <div id="halq-notes"></div>
+
+      <button type="button" class="btn btn-primary" id="btn-halq-done" data-i18n="halq_confirm">
+        أنهيتُ الحلق أو التقصير
+      </button>
+      <button type="button" class="btn btn-outline" id="btn-halq-back" data-i18n="guide_undo_btn">تراجع</button>
+    </div>
+  </div>
+
   <!-- ——— اكتمال العمرة ——— -->
   <div id="screen-done" class="overlay-screen">
+    <svg class="done-mark" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+      <circle cx="12" cy="12" r="10" /><path d="M8 12.5l2.5 2.5L16 9.5" />
+    </svg>
     <h2 data-i18n="umrah_done_title">تقبّل الله منك</h2>
     <p data-i18n="umrah_done_body">تمّت عمرتك بالحلق أو التقصير، وحللتَ من إحرامك.</p>
+
+    <p class="done-duration">
+      <span data-i18n="done_duration">استغرقت عمرتك</span>
+      <strong id="done-duration-text">—</strong>
+    </p>
+
     <div class="btn-row">
-      <button type="button" class="btn btn-primary" id="btn-again" data-i18n="umrah_done_again">بدء عمرة جديدة</button>
-      <a class="btn btn-outline" href="index.html" data-i18n="nav_home">الرئيسية</a>
+      <a class="btn btn-primary" href="index.html" data-i18n="nav_home">الرئيسية</a>
+      <a class="btn btn-outline" href="manasik.html" data-i18n="nav_manasik">دليل المناسك</a>
     </div>
   </div>
 
